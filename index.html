@@ -1,1 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PRC Baguio Blood Services System - Login</title>
+    <meta charset="UTF-8">
 
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #8b0000, #b30000);
+        }
+
+        .login-box {
+            background-color: white;
+            width: 350px;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0px 5px 15px rgba(0,0,0,0.2);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .logo {
+            width: 120px;
+            margin-bottom: 15px;
+        }
+
+        h2 {
+            color: #b30000;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #b30000;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="login-box">
+    <img src="images/logo.png" class="logo">
+    <h2>PRC Baguio</h2>
+
+    <input type="text" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+
+    <button onclick="login()">Login</button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+// 🔥 YOUR NEW FIREBASE CONFIG
+const firebaseConfig = {
+  apiKey: "PASTE_YOURS_HERE",
+  authDomain: "prc-baguio-bss.firebaseapp.com",
+  databaseURL: "https://prc-baguio-bss-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "prc-baguio-bss",
+  storageBucket: "prc-baguio-bss.appspot.com",
+  messagingSenderId: "PASTE",
+  appId: "PASTE"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+window.login = async function() {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
+        alert("Login successful");
+        window.location.href = "dashboard.html";
+    } catch (error) {
+        alert("Login failed: " + error.message);
+    }
+};
+
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        window.location.href = "dashboard.html";
+    }
+});
+</script>
+
+</body>
+</html>
