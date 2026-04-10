@@ -3,53 +3,88 @@
 <head>
     <title>PRC Baguio Blood Services System - Login</title>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
             font-family: Arial, sans-serif;
+            min-height: 100vh;
             background: linear-gradient(135deg, #8b0000, #b30000);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
 
         .login-box {
             background-color: white;
-            width: 350px;
+            width: 100%;
+            max-width: 380px;
             padding: 30px;
-            border-radius: 10px;
+            border-radius: 12px;
             text-align: center;
-            box-shadow: 0px 5px 15px rgba(0,0,0,0.2);
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.22);
         }
 
         .logo {
-            width: 120px;
-            margin-bottom: 15px;
+            width: 110px;
+            margin-bottom: 12px;
         }
 
         h2 {
             color: #b30000;
+            margin: 0 0 18px 0;
+        }
+
+        .subtitle {
+            color: #555;
+            font-size: 14px;
+            margin-bottom: 18px;
         }
 
         input {
             width: 100%;
-            padding: 10px;
+            padding: 11px 12px;
             margin: 8px 0;
             border: 1px solid #ccc;
-            border-radius: 5px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #b30000;
+            box-shadow: 0 0 0 3px rgba(179, 0, 0, 0.10);
         }
 
         button {
             width: 100%;
-            padding: 10px;
+            padding: 11px;
+            margin-top: 10px;
             background-color: #b30000;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 6px;
             font-weight: bold;
             cursor: pointer;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background-color: #8f0000;
+        }
+
+        #msg {
+            margin-top: 12px;
+            font-size: 13px;
+            color: #b30000;
+            min-height: 18px;
+            word-break: break-word;
         }
     </style>
 </head>
@@ -57,51 +92,66 @@
 <body>
 
 <div class="login-box">
-    <img src="images/logo.png" class="logo">
-    <h2>PRC Baguio</h2>
+    <img src="images/logo.png" alt="PRC Logo" class="logo">
+    <h2>PRC Baguio Blood Services System</h2>
+    <div class="subtitle">Authorized personnel only</div>
 
-    <input type="text" id="email" placeholder="Email">
+    <input type="email" id="email" placeholder="Email">
     <input type="password" id="password" placeholder="Password">
 
     <button onclick="login()">Login</button>
+
+    <div id="msg"></div>
 </div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-// 🔥 YOUR NEW FIREBASE CONFIG
-const firebaseConfig = {
-  apiKey: "PASTE_YOURS_HERE",
-  authDomain: "prc-baguio-bss.firebaseapp.com",
-  databaseURL: "https://prc-baguio-bss-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "prc-baguio-bss",
-  storageBucket: "prc-baguio-bss.appspot.com",
-  messagingSenderId: "PASTE",
-  appId: "PASTE"
-};
+    const firebaseConfig = {
+      apiKey: "AIzaSyDk_ZKjamILmKJZh0HvVcpPCtFR29uvfNs",
+      authDomain: "prc-baguio-bss.firebaseapp.com",
+      databaseURL: "https://prc-baguio-bss-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "prc-baguio-bss",
+      storageBucket: "prc-baguio-bss.firebasestorage.app",
+      messagingSenderId: "867086763087",
+      appId: "1:867086763087:web:c1f09d9a1bce6c4799563a"
+    };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
 
-window.login = async function() {
-    const email = document.getElementById("email").value;
-    const password = document.getElementById("password").value;
+    const msg = document.getElementById("msg");
 
-    try {
-        await signInWithEmailAndPassword(auth, email, password);
-        alert("Login successful");
-        window.location.href = "dashboard.html";
-    } catch (error) {
-        alert("Login failed: " + error.message);
-    }
-};
+    window.login = async function () {
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
 
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        window.location.href = "dashboard.html";
-    }
-});
+        msg.style.color = "#b30000";
+        msg.textContent = "";
+
+        if (!email || !password) {
+            msg.textContent = "Enter your email and password.";
+            return;
+        }
+
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+            msg.style.color = "green";
+            msg.textContent = "Login successful...";
+            window.location.href = "dashboard.html";
+        } catch (error) {
+            console.error("Login failed:", error);
+            msg.style.color = "#b30000";
+            msg.textContent = error.code + " - " + error.message;
+        }
+    };
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            window.location.href = "dashboard.html";
+        }
+    });
 </script>
 
 </body>
