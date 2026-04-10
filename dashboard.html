@@ -1,152 +1,1257 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Philippine Red Cross - Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>PRC Baguio Blood Services System</title>
+    <style>
+        * { box-sizing: border-box; }
 
-<style>
-* {
-    box-sizing: border-box;
-    font-family: Arial, sans-serif;
-}
+        :root{
+            --prc-red:#b30000;
+            --prc-red-dark:#7f0000;
+            --prc-red-soft:#fdf1f1;
+            --prc-rose:#fff7f7;
+            --bg:#eaf0f5;
+            --bg-soft:#f4f7fa;
+            --panel:#ffffff;
+            --panel-soft:#fbfcfe;
+            --line:#d7e0e8;
+            --text:#1f2937;
+            --muted:#667085;
+            --muted-dark:#475467;
+            --blue:#0f52ba;
+            --green:#166534;
+            --orange:#a64b00;
+            --purple:#6b21a8;
+            --shadow:0 14px 30px rgba(15,23,42,0.08);
+            --radius:18px;
+        }
 
-body {
-    margin: 0;
-    display: flex;
-    height: 100vh;
-}
+        html, body {
+            margin: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+            background:
+                radial-gradient(circle at top left, #f7fafc 0%, #edf2f7 35%, #e8eef4 100%);
+            color: var(--text);
+        }
 
-/* Sidebar */
-.sidebar {
-    width: 250px;
-    background: #b30000;
-    color: white;
-    display: flex;
-    flex-direction: column;
-    padding: 15px;
-}
+        body{
+            overflow: hidden;
+        }
 
-.sidebar h2 {
-    margin: 0 0 20px 0;
-}
+        .app-shell{
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
 
-.sidebar button {
-    background: none;
-    border: none;
-    color: white;
-    text-align: left;
-    padding: 10px;
-    cursor: pointer;
-    border-radius: 5px;
-}
+        .topbar{
+            background:
+                linear-gradient(90deg, rgba(255,255,255,0.08), rgba(255,255,255,0)),
+                linear-gradient(90deg, #7a0000 0%, #a50000 45%, #c01818 100%);
+            color: white;
+            padding: 12px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            box-shadow: 0 3px 14px rgba(0,0,0,0.18);
+            flex-shrink: 0;
+            border-bottom: 2px solid rgba(255,255,255,0.08);
+        }
 
-.sidebar button:hover {
-    background: #800000;
-}
+        .topbar-left{
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
 
-/* Main */
-.main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-}
+        .logo{
+            width: 52px;
+            height: 52px;
+            object-fit: contain;
+            background: white;
+            border-radius: 50%;
+            padding: 4px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.16);
+            flex-shrink: 0;
+        }
 
-/* Topbar */
-.topbar {
-    background: white;
-    padding: 10px 15px;
-    border-bottom: 1px solid #ddd;
-    display: flex;
-    justify-content: space-between;
-}
+        .title-block{
+            min-width: 0;
+        }
 
-iframe {
-    flex: 1;
-    border: none;
-}
+        .title-block h1{
+            margin: 0;
+            font-size: 20px;
+            line-height: 1.1;
+            font-weight: 700;
+            letter-spacing: .2px;
+        }
 
-/* Mobile */
-.menu-btn {
-    display: none;
-    cursor: pointer;
-}
+        .title-block .sub{
+            font-size: 12px;
+            opacity: 0.95;
+            margin-top: 4px;
+        }
 
-@media(max-width: 768px) {
-    .sidebar {
-        position: absolute;
-        left: -250px;
-        top: 0;
-        height: 100%;
-        transition: 0.3s;
-        z-index: 10;
-    }
+        .topbar-right{
+            font-size: 13px;
+            font-weight: bold;
+            background: rgba(255,255,255,0.12);
+            padding: 9px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.14);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+            white-space: nowrap;
+        }
 
-    .sidebar.show {
-        left: 0;
-    }
+        .layout{
+            flex: 1;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            min-height: 0;
+        }
 
-    .menu-btn {
-        display: block;
-    }
-}
-</style>
+        .sidebar{
+            background:
+                linear-gradient(180deg, #ffffff 0%, #f7fafc 100%);
+            border-right: 1px solid var(--line);
+            padding: 14px 12px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .sidebar::before{
+            content:"";
+            position:absolute;
+            top:0;
+            left:0;
+            right:0;
+            height:74px;
+            background: linear-gradient(180deg, rgba(179,0,0,0.08), rgba(179,0,0,0));
+            pointer-events:none;
+        }
+
+        .sidebar-brand{
+            position: relative;
+            z-index: 1;
+            background: linear-gradient(135deg, #ffffff, #fbfcfe);
+            border: 1px solid #e7edf4;
+            border-radius: 18px;
+            padding: 14px 14px 12px;
+            margin-bottom: 14px;
+            box-shadow: 0 6px 18px rgba(15,23,42,0.05);
+            cursor: pointer;
+            transition: all .18s ease;
+        }
+
+        .sidebar-brand:hover{
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(15,23,42,0.07);
+            border-color: #f0caca;
+        }
+
+        .sidebar-brand-title{
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--prc-red-dark);
+            margin-bottom: 4px;
+        }
+
+        .sidebar-brand-sub{
+            font-size: 12px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .sidebar-title{
+            font-size: 11px;
+            font-weight: bold;
+            color: #6b7280;
+            text-transform: uppercase;
+            margin: 10px 10px 10px;
+            letter-spacing: .9px;
+        }
+
+        .nav-group{
+            margin-bottom: 18px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .nav-btn{
+            width: 100%;
+            border: 1px solid #e3e9f0;
+            border-radius: 14px;
+            padding: 13px 14px;
+            margin-bottom: 8px;
+            text-align: left;
+            font-weight: bold;
+            cursor: pointer;
+            color: var(--text);
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            transition: all .18s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            box-shadow: 0 2px 6px rgba(15,23,42,0.03);
+        }
+
+        .nav-btn:hover{
+            background: linear-gradient(180deg, #fff8f8 0%, #fff1f1 100%);
+            border-color: #f0c8c8;
+            transform: translateY(-1px);
+        }
+
+        .nav-btn.active{
+            background: linear-gradient(135deg, #920000, #c31616);
+            color: white;
+            border-color: #920000;
+            box-shadow: 0 8px 18px rgba(179,0,0,0.20);
+        }
+
+        .nav-left{
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .nav-icon{
+            width: 30px;
+            height: 30px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #f3f6fa;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .nav-btn.active .nav-icon{
+            background: rgba(255,255,255,0.18);
+        }
+
+        .nav-text{
+            min-width: 0;
+        }
+
+        .nav-label{
+            display:block;
+            font-size: 14px;
+            line-height: 1.15;
+        }
+
+        .nav-hint{
+            display:block;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--muted);
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .nav-btn.active .nav-hint{
+            color: rgba(255,255,255,0.88);
+        }
+
+        .nav-arrow{
+            font-size: 12px;
+            opacity: 0.9;
+            flex-shrink: 0;
+            transition: transform .18s ease;
+        }
+
+        .nav-btn.active .nav-arrow{
+            transform: rotate(180deg);
+        }
+
+        .submenu{
+            display: none;
+            padding: 4px 0 8px 14px;
+            margin-top: -2px;
+            border-left: 2px solid #e7edf4;
+            margin-left: 14px;
+            animation: fadeIn .18s ease;
+        }
+
+        .submenu.open{
+            display: block;
+        }
+
+        @keyframes fadeIn{
+            from{ opacity:0; transform: translateY(-4px); }
+            to{ opacity:1; transform: translateY(0); }
+        }
+
+        .sub-btn{
+            width: 100%;
+            border: 1px solid transparent;
+            border-radius: 12px;
+            padding: 11px 12px;
+            margin-bottom: 6px;
+            text-align: left;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all .18s ease;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+            position: relative;
+        }
+
+        .sub-btn:hover{
+            transform: translateX(2px);
+        }
+
+        .sub-btn.active-sub{
+            border-color: var(--prc-red);
+            box-shadow: 0 0 0 2px rgba(179,0,0,0.12);
+        }
+
+        .sub-btn::before{
+            content:"";
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 9px;
+            vertical-align: middle;
+            background: currentColor;
+            opacity: 0.65;
+        }
+
+        .sub-btn.red{ background:#fdeaea; color:#8b0000; }
+        .sub-btn.orange{ background:#fff1e6; color:#a64b00; }
+        .sub-btn.green{ background:#e9f8ef; color:#166534; }
+        .sub-btn.blue{ background:#e8f1ff; color:#0f52ba; }
+        .sub-btn.purple{ background:#f1e9ff; color:#6b21a8; }
+        .sub-btn.gray{ background:#eceff3; color:#374151; }
+
+        .logout-wrap{
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #e6edf5;
+            position: relative;
+            z-index: 1;
+        }
+
+        .logout-btn{
+            width: 100%;
+            border: none;
+            border-radius: 14px;
+            padding: 14px;
+            background: linear-gradient(135deg, #2f2f2f, #494949);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+        }
+
+        .workspace{
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            background:
+                linear-gradient(135deg, #edf3f7 0%, #f7f3f3 45%, #eef4f8 100%);
+        }
+
+        .workspace-header{
+            background: linear-gradient(180deg, #fbfcfd 0%, #f6f8fb 100%);
+            border-bottom: 1px solid #dbe3ec;
+            padding: 13px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            min-height: 74px;
+        }
+
+        .workspace-title{
+            font-size: 19px;
+            font-weight: 800;
+            color: #111827;
+            letter-spacing: 0.1px;
+        }
+
+        .workspace-subtitle{
+            display: none;
+        }
+
+        .workspace-actions{
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn{
+            border: none;
+            border-radius: 10px;
+            padding: 10px 13px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            background: linear-gradient(135deg, #1565c0, #1e88e5);
+            box-shadow: 0 5px 10px rgba(21,101,192,0.18);
+        }
+
+        .iframe-wrap{
+            flex: 1;
+            min-height: 0;
+            padding: 18px;
+            position: relative;
+        }
+
+        .module-frame{
+            width: 100%;
+            height: 100%;
+            border: 1px solid #dbe3ec;
+            border-radius: 22px;
+            background: white;
+            box-shadow: var(--shadow);
+        }
+
+        .welcome-panel{
+            width: 100%;
+            height: 100%;
+            border: 1px solid #d8e2ea;
+            border-radius: 22px;
+            background:
+                radial-gradient(circle at top right, rgba(179,0,0,0.08), transparent 28%),
+                radial-gradient(circle at bottom left, rgba(15,82,186,0.06), transparent 24%),
+                linear-gradient(135deg, #f4f8fb 0%, #fbf7f7 52%, #f1f6fa 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 34px;
+            box-shadow: 0 14px 36px rgba(15,23,42,0.08);
+        }
+
+        .welcome-card{
+            width: min(760px, 100%);
+            text-align: center;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(250,252,253,0.98) 100%);
+            border: 1px solid #dde6ee;
+            border-radius: 28px;
+            padding: 38px 30px 28px;
+            box-shadow: 0 18px 38px rgba(127,0,0,0.08);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(4px);
+        }
+
+        .welcome-card::before{
+            content:"";
+            position:absolute;
+            top:0;
+            left:0;
+            right:0;
+            height:8px;
+            background: linear-gradient(90deg, #8d0000, #c11717, #e13a3a);
+        }
+
+        .welcome-card::after{
+            content:"";
+            position:absolute;
+            inset:auto -80px -80px auto;
+            width:220px;
+            height:220px;
+            border-radius:50%;
+            background: radial-gradient(circle, rgba(179,0,0,0.06), transparent 70%);
+            pointer-events:none;
+        }
+
+        .welcome-badge{
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: linear-gradient(180deg, #fff5f5, #fff0f0);
+            color: #8b0000;
+            font-size: 12px;
+            font-weight: 800;
+            border: 1px solid #f1caca;
+            margin-bottom: 16px;
+        }
+
+        .welcome-logo{
+            width: 122px;
+            max-width: 32vw;
+            height: auto;
+            display: block;
+            margin: 0 auto 18px;
+            filter: drop-shadow(0 6px 14px rgba(0,0,0,0.10));
+        }
+
+        .welcome-title{
+            font-size: 31px;
+            font-weight: 800;
+            line-height: 1.15;
+            color: #9a0000;
+            margin-bottom: 6px;
+            letter-spacing: 0.2px;
+        }
+
+        .welcome-subtitle{
+            font-size: 19px;
+            color: #344054;
+            font-weight: 700;
+            margin-bottom: 22px;
+        }
+
+        .welcome-grid{
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-top: 8px;
+        }
+
+        .welcome-mini{
+            background: linear-gradient(180deg, #ffffff, #f7fafc);
+            border: 1px solid #dce5ed;
+            border-radius: 18px;
+            padding: 16px 12px;
+            box-shadow: 0 4px 12px rgba(15,23,42,0.04);
+        }
+
+        .welcome-mini-icon{
+            font-size: 22px;
+            margin-bottom: 8px;
+        }
+
+        .welcome-mini-title{
+            font-size: 13px;
+            font-weight: 800;
+            color: #111827;
+            margin-bottom: 6px;
+        }
+
+        .welcome-mini-sub{
+            font-size: 11px;
+            color: #667085;
+            line-height: 1.6;
+        }
+
+        .hidden-role{
+            display: none !important;
+        }
+
+        .hidden-view{
+            display: none !important;
+        }
+
+        @media (max-width: 1100px){
+            .welcome-grid{
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 980px){
+            .layout{
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar{
+                border-right: none;
+                border-bottom: 1px solid var(--line);
+                max-height: 44vh;
+            }
+
+            .welcome-grid{
+                grid-template-columns: 1fr;
+            }
+
+            .welcome-title{
+                font-size: 24px;
+            }
+
+            .welcome-subtitle{
+                font-size: 16px;
+            }
+        }
+
+        @media (max-width: 640px){
+            .topbar{
+                padding: 10px 12px;
+                flex-wrap: wrap;
+            }
+
+            .logo{
+                width: 46px;
+                height: 46px;
+            }
+
+            .title-block h1{
+                font-size: 17px;
+            }
+
+            .workspace-header{
+                flex-direction: row;
+                align-items: center;
+            }
+
+            .welcome-panel{
+                padding: 18px;
+            }
+
+            .welcome-card{
+                padding: 26px 18px 20px;
+            }
+
+            .welcome-logo{
+                width: 94px;
+            }
+
+            .welcome-title{
+                font-size: 21px;
+            }
+
+            .welcome-subtitle{
+                font-size: 14px;
+            }
+
+            .nav-hint{
+                display: none;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
-<div class="sidebar" id="sidebar">
-    <h2>PRC Baguio</h2>
+<div class="app-shell">
 
-    <button onclick="loadPage('home.html')">Dashboard</button>
-    <button onclick="loadPage('donor-entry.html')">Donor Database</button>
-    <button onclick="loadPage('galloner.html')">Galloner</button>
-    <button onclick="loadPage('events.html')">Blood Drive Events</button>
-    <button onclick="loadPage('releasing.html')">Releasing</button>
-
-    <button onclick="logout()">Logout</button>
-</div>
-
-<div class="main">
     <div class="topbar">
-        <span class="menu-btn" onclick="toggleMenu()">☰</span>
-        <span>PRC Baguio Blood Services System</span>
+        <div class="topbar-left">
+            <img src="images/logo.png" class="logo">
+            <div class="title-block">
+                <h1>Philippine Red Cross</h1>
+                <div class="sub">Baguio City Chapter</div>
+            </div>
+        </div>
+        <div class="topbar-right" id="topbarRoleText">
+            Blood Services Panel
+        </div>
     </div>
 
-    <iframe id="frame" src="home.html"></iframe>
+    <div class="layout">
+
+        <aside class="sidebar">
+            <div class="sidebar-brand" onclick="goDashboardHome()">
+                <div class="sidebar-brand-title">Red Cross Dashboard</div>
+                <div class="sidebar-brand-sub">Click to return to dashboard home</div>
+            </div>
+
+            <div class="nav-group">
+                <div class="sidebar-title">Main Modules</div>
+
+                <button id="nav-donor-database" class="nav-btn" onclick="toggleSection('donor-database')">
+                    <span class="nav-left">
+                        <span class="nav-icon">🩸</span>
+                        <span class="nav-text">
+                            <span class="nav-label">Donor Database</span>
+                            <span class="nav-hint">Data input, tracking, statistics</span>
+                        </span>
+                    </span>
+                    <span class="nav-arrow">▼</span>
+                </button>
+                <div id="section-donor-database" class="submenu">
+                    <button id="btn-donor-db-entry" class="sub-btn blue" onclick="openModule('donor-database-entry.html','Donor Database - Data Input','')">Data Input</button>
+                    <button id="btn-donor-db-tracking" class="sub-btn blue" onclick="openModule('donor-database-tracking.html','Donor Database - Tracking','')">Tracking</button>
+                    <button id="btn-donor-db-stat" class="sub-btn green" onclick="openModule('donor-database-statistics.html','Donor Database - Statistics','')">Statistics</button>
+                </div>
+
+                <button id="nav-galloner" class="nav-btn" onclick="toggleSection('galloner')">
+                    <span class="nav-left">
+                        <span class="nav-icon">🧾</span>
+                        <span class="nav-text">
+                            <span class="nav-label">Galloner</span>
+                            <span class="nav-hint">Donor entry, tracking, awardees</span>
+                        </span>
+                    </span>
+                    <span class="nav-arrow">▼</span>
+                </button>
+                <div id="section-galloner" class="submenu">
+                    <button id="btn-donor-entry" class="sub-btn red" onclick="openModule('donor-entry.html','Donor Entry','')">Donor Entry</button>
+                    <button id="btn-tracking" class="sub-btn red" onclick="openModule('tracking.html','Tracking','')">Tracking</button>
+                    <button id="btn-awardees" class="sub-btn purple" onclick="openModule('awardees.html','Awardees','')">Awardees</button>
+                </div>
+
+                <button id="nav-events" class="nav-btn" onclick="toggleSection('events')">
+                    <span class="nav-left">
+                        <span class="nav-icon">📅</span>
+                        <span class="nav-text">
+                            <span class="nav-label">Blood Drive Events</span>
+                            <span class="nav-hint">Entry, tracking, statistics</span>
+                        </span>
+                    </span>
+                    <span class="nav-arrow">▼</span>
+                </button>
+                <div id="section-events" class="submenu">
+                    <button id="btn-events-entry" class="sub-btn blue" onclick="openModule('blood-drive-entry.html','Blood Drive Events - Entry','')">Entry</button>
+                    <button id="btn-events-tracking" class="sub-btn blue" onclick="openModule('blood-drive-tracking.html','Blood Drive Events - Tracking','')">Tracking</button>
+                    <button id="btn-events-stat" class="sub-btn green" onclick="openModule('blood-drive-statistics.html','Blood Drive Events - Statistics','')">Statistics</button>
+                </div>
+
+                <button id="nav-partner" class="nav-btn" onclick="openSingleModule(this,'partner-organization.html','Partner Organization','')">
+                    <span class="nav-left">
+                        <span class="nav-icon">🏥</span>
+                        <span class="nav-text">
+                            <span class="nav-label">Partner Organization</span>
+                            <span class="nav-hint">External partner management</span>
+                        </span>
+                    </span>
+                </button>
+
+                <button id="nav-releasing" class="nav-btn" onclick="toggleSection('releasing')">
+                    <span class="nav-left">
+                        <span class="nav-icon">💉</span>
+                        <span class="nav-text">
+                            <span class="nav-label">Releasing</span>
+                            <span class="nav-hint">Blood issue, tracking, facility</span>
+                        </span>
+                    </span>
+                    <span class="nav-arrow">▼</span>
+                </button>
+                <div id="section-releasing" class="submenu">
+                    <button id="btn-releasing-main" class="sub-btn orange" onclick="openModule('releasing.html','Blood Releasing','')">Main</button>
+                    <button id="btn-releasing-entry" class="sub-btn orange" onclick="openModule('releasing-entry.html','Releasing Entry','')">Entry</button>
+                    <button id="btn-releasing-tracking" class="sub-btn orange" onclick="openModule('releasing-tracking.html','Releasing Tracking','')">Tracking</button>
+                    <button id="btn-releasing-stats" class="sub-btn green" onclick="openModule('releasing-statistics.html','Releasing Statistics','')">Statistics</button>
+                    <button id="btn-facility-manager" class="sub-btn blue" onclick="openModule('facility-manager.html','Facility Manager','')">Facility Manager</button>
+                </div>
+
+                <button id="nav-bulk-import" class="nav-btn" onclick="openSingleModule(this,'donor-import.html','Donor Database - Bulk Import','')">
+                    <span class="nav-left">
+                        <span class="nav-icon">📥</span>
+                        <span class="nav-text">
+                            <span class="nav-label">Bulk Import</span>
+                            <span class="nav-hint">Mass donor upload</span>
+                        </span>
+                    </span>
+                </button>
+
+                <button id="nav-donor-cleanup" class="nav-btn" onclick="openSingleModule(this,'donor-import-cleanup.html','Donor Database - Donor Cleanup','')">
+                    <span class="nav-left">
+                        <span class="nav-icon">🧹</span>
+                        <span class="nav-text">
+                            <span class="nav-label">Donor Cleanup</span>
+                            <span class="nav-hint">Import cleanup and correction</span>
+                        </span>
+                    </span>
+                </button>
+
+                <button id="nav-reports" class="nav-btn" onclick="openSingleModule(this,'reports.html','Reports','')">
+                    <span class="nav-left">
+                        <span class="nav-icon">📊</span>
+                        <span class="nav-text">
+                            <span class="nav-label">Reports</span>
+                            <span class="nav-hint">Summary and printable reports</span>
+                        </span>
+                    </span>
+                </button>
+
+                <button id="nav-admin" class="nav-btn" onclick="openSingleModule(this,'admin-manager.html','Admin Manager','')">
+                    <span class="nav-left">
+                        <span class="nav-icon">⚙️</span>
+                        <span class="nav-text">
+                            <span class="nav-label">Admin Manager</span>
+                            <span class="nav-hint">User and admin controls</span>
+                        </span>
+                    </span>
+                </button>
+
+                <button id="nav-backup" class="nav-btn" onclick="toggleSection('backup')">
+                    <span class="nav-left">
+                        <span class="nav-icon">🗂️</span>
+                        <span class="nav-text">
+                            <span class="nav-label">Backup Manager</span>
+                            <span class="nav-hint">Save, download, restore review</span>
+                        </span>
+                    </span>
+                    <span class="nav-arrow">▼</span>
+                </button>
+                <div id="section-backup" class="submenu">
+                    <button id="btn-backup-download" class="sub-btn green" onclick="downloadBackupFile()">Monthly Backup</button>
+                    <button id="btn-backup-save" class="sub-btn green" onclick="saveBackupToSystem()">Save Backup</button>
+                    <button id="btn-backup-viewer" class="sub-btn blue" onclick="openModule('backup-viewer.html','Backup Viewer','')">Backup Viewer</button>
+                </div>
+            </div>
+
+            <div class="logout-wrap">
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </aside>
+
+        <main class="workspace">
+            <div class="workspace-header">
+                <div>
+                    <div id="workspaceTitle" class="workspace-title"></div>
+                    <div id="workspaceSubtitle" class="workspace-subtitle"></div>
+                </div>
+                <div class="workspace-actions">
+                    <button class="action-btn" onclick="reloadFrame()">Reload</button>
+                </div>
+            </div>
+
+            <div class="iframe-wrap">
+                <div id="welcomePanel" class="welcome-panel">
+                    <div class="welcome-card">
+                        <div class="welcome-badge">● Blood Services Workspace</div>
+                        <img src="images/logo.png" class="welcome-logo" alt="PRC Logo">
+                        <div class="welcome-title">Philippine Red Cross</div>
+                        <div class="welcome-subtitle">Baguio City Chapter</div>
+
+                        <div class="welcome-grid">
+                            <div class="welcome-mini">
+                                <div class="welcome-mini-icon">🩸</div>
+                                <div class="welcome-mini-title">Donor Records</div>
+                                <div class="welcome-mini-sub">Fast access to donor input, tracking, and statistics.</div>
+                            </div>
+                            <div class="welcome-mini">
+                                <div class="welcome-mini-icon">🧾</div>
+                                <div class="welcome-mini-title">Galloner</div>
+                                <div class="welcome-mini-sub">Manage donor entry, tracking, and awardees.</div>
+                            </div>
+                            <div class="welcome-mini">
+                                <div class="welcome-mini-icon">📅</div>
+                                <div class="welcome-mini-title">Events</div>
+                                <div class="welcome-mini-sub">Coordinate blood drive event entry, tracking, and summaries.</div>
+                            </div>
+                            <div class="welcome-mini">
+                                <div class="welcome-mini-icon">💉</div>
+                                <div class="welcome-mini-title">Releasing</div>
+                                <div class="welcome-mini-sub">Clean workflow for blood issue, monitoring, and facility use.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <iframe id="moduleFrame" class="module-frame hidden-view" src=""></iframe>
+            </div>
+        </main>
+
+    </div>
 </div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDk_ZKjamILmKJZh0HvVcpPCtFR29uvfNs",
-  authDomain: "prc-baguio-bss.firebaseapp.com",
-  databaseURL: "https://prc-baguio-bss-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "prc-baguio-bss",
-  storageBucket: "prc-baguio-bss.firebasestorage.app",
-  messagingSenderId: "867086763087",
-  appId: "1:867086763087:web:c1f09d9a1bce6c4799563a"
-};
+    const firebaseConfig = {
+        apiKey: "AIzaSyDk_ZKjamILmKJZh0HvVcpPCtFR29uvfNs",
+        authDomain: "prc-baguio-bss.firebaseapp.com",
+        databaseURL: "https://prc-baguio-bss-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "prc-baguio-bss",
+        storageBucket: "prc-baguio-bss.firebasestorage.app",
+        messagingSenderId: "867086763087",
+        appId: "1:867086763087:web:c1f09d9a1bce6c4799563a"
+    };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
 
-window.loadPage = function(page) {
-    document.getElementById("frame").src = page;
-};
+    const sections = ["donor-database", "galloner", "events", "releasing", "backup"];
+    const frame = document.getElementById("moduleFrame");
+    const welcomePanel = document.getElementById("welcomePanel");
+    const workspaceTitle = document.getElementById("workspaceTitle");
+    const workspaceSubtitle = document.getElementById("workspaceSubtitle");
+    const topbarRoleText = document.getElementById("topbarRoleText");
 
-window.logout = function() {
-    signOut(auth).then(() => {
-        window.location.href = "index.html";
+    let currentUserRole = "admin";
+
+    onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+            window.location.href = "index.html";
+            return;
+        }
+
+        try {
+            const rolePath = "userRoles/" + user.uid + "/role";
+            const roleSnapshot = await get(ref(db, rolePath));
+            currentUserRole = roleSnapshot.exists() ? roleSnapshot.val() : "admin";
+
+            applyRoleAccess(currentUserRole);
+            showWelcomeHome();
+        } catch (error) {
+            console.error("Role loading error:", error);
+            alert("Role loading error: " + error.message);
+
+            currentUserRole = "admin";
+            applyRoleAccess(currentUserRole);
+            showWelcomeHome();
+        }
     });
-};
 
-window.toggleMenu = function() {
-    document.getElementById("sidebar").classList.toggle("show");
-};
+    function clearActiveSubs() {
+        document.querySelectorAll(".sub-btn").forEach(btn => {
+            btn.classList.remove("active-sub");
+        });
+    }
+
+    function clearActiveNavs() {
+        document.querySelectorAll(".nav-btn").forEach(btn => {
+            btn.classList.remove("active");
+        });
+    }
+
+    function buildFreshUrl(url) {
+        return url + (url.includes("?") ? "&" : "?") + "t=" + Date.now();
+    }
+
+    function hideElement(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.add("hidden-role");
+    }
+
+    function showElement(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove("hidden-role");
+    }
+
+    function closeSection(name) {
+        const section = document.getElementById("section-" + name);
+        const nav = document.getElementById("nav-" + name);
+        if (section) section.classList.remove("open");
+        if (nav) nav.classList.remove("active");
+    }
+
+    function closeAllSections() {
+        sections.forEach(sectionName => {
+            const section = document.getElementById("section-" + sectionName);
+            const nav = document.getElementById("nav-" + sectionName);
+            if (section) section.classList.remove("open");
+            if (nav) nav.classList.remove("active");
+        });
+    }
+
+    function showWelcomeHome() {
+        clearActiveSubs();
+        clearActiveNavs();
+        closeAllSections();
+        frame.classList.add("hidden-view");
+        welcomePanel.classList.remove("hidden-view");
+        workspaceTitle.textContent = "";
+        workspaceSubtitle.textContent = "";
+        frame.src = "";
+    }
+
+    window.goDashboardHome = function() {
+        showWelcomeHome();
+    };
+
+    function showModuleFrame() {
+        welcomePanel.classList.add("hidden-view");
+        frame.classList.remove("hidden-view");
+    }
+
+    function applyRoleAccess(role) {
+        showElement("nav-donor-database");
+        showElement("section-donor-database");
+        showElement("nav-galloner");
+        showElement("section-galloner");
+        showElement("nav-events");
+        showElement("section-events");
+        showElement("nav-partner");
+        showElement("nav-releasing");
+        showElement("section-releasing");
+        showElement("nav-bulk-import");
+        showElement("nav-donor-cleanup");
+        showElement("nav-reports");
+        showElement("nav-admin");
+        showElement("nav-backup");
+        showElement("section-backup");
+        showElement("btn-donor-db-entry");
+        showElement("btn-donor-db-tracking");
+        showElement("btn-donor-db-stat");
+        showElement("btn-donor-entry");
+        showElement("btn-tracking");
+        showElement("btn-awardees");
+        showElement("btn-events-entry");
+        showElement("btn-events-tracking");
+        showElement("btn-events-stat");
+        showElement("btn-backup-download");
+        showElement("btn-backup-save");
+        showElement("btn-backup-viewer");
+
+        if (role === "limitedEncoder") {
+            topbarRoleText.textContent = "Limited Encoder Access";
+
+            hideElement("btn-donor-db-stat");
+            hideElement("btn-events-stat");
+            hideElement("nav-partner");
+            hideElement("nav-releasing");
+            hideElement("section-releasing");
+            hideElement("nav-bulk-import");
+            hideElement("nav-donor-cleanup");
+            hideElement("nav-reports");
+            hideElement("nav-admin");
+            hideElement("nav-backup");
+            hideElement("section-backup");
+
+            closeSection("releasing");
+            closeSection("backup");
+        } else if (role === "viewer") {
+            topbarRoleText.textContent = "Viewer Access";
+
+            hideElement("btn-donor-db-entry");
+            hideElement("btn-donor-entry");
+            hideElement("btn-events-entry");
+            hideElement("btn-releasing-entry");
+            hideElement("nav-bulk-import");
+            hideElement("nav-donor-cleanup");
+            hideElement("nav-admin");
+            hideElement("nav-backup");
+            hideElement("section-backup");
+        } else {
+            topbarRoleText.textContent = "Blood Services Panel";
+        }
+    }
+
+    window.toggleSection = function(name) {
+        if (currentUserRole === "limitedEncoder" && !["donor-database", "galloner", "events"].includes(name)) {
+            return;
+        }
+
+        const clickedSection = document.getElementById("section-" + name);
+        const clickedNav = document.getElementById("nav-" + name);
+
+        if (!clickedSection || !clickedNav) return;
+
+        const willOpen = !clickedSection.classList.contains("open");
+
+        closeAllSections();
+
+        if (willOpen) {
+            clickedSection.classList.add("open");
+            clickedNav.classList.add("active");
+        }
+    };
+
+    window.openModule = function(url, title, subtitle) {
+        if (currentUserRole === "limitedEncoder") {
+            const allowedModules = [
+                "donor-database-entry.html",
+                "donor-database-tracking.html",
+                "donor-entry.html",
+                "tracking.html",
+                "awardees.html",
+                "blood-drive-entry.html",
+                "blood-drive-tracking.html"
+            ];
+
+            if (!allowedModules.includes(url)) {
+                alert("You do not have access to this module.");
+                return;
+            }
+        }
+
+        if (currentUserRole === "viewer") {
+            const blockedViewerModules = [
+                "donor-database-entry.html",
+                "donor-entry.html",
+                "blood-drive-entry.html",
+                "releasing-entry.html",
+                "admin-manager.html",
+                "donor-import.html",
+                "donor-import-cleanup.html",
+                "backup-viewer.html"
+            ];
+
+            if (blockedViewerModules.includes(url)) {
+                alert("You do not have access to this module.");
+                return;
+            }
+        }
+
+        showModuleFrame();
+        frame.src = buildFreshUrl(url);
+        workspaceTitle.textContent = title;
+        workspaceSubtitle.textContent = subtitle || "";
+        clearActiveSubs();
+
+        const matchingButton = Array.from(document.querySelectorAll(".sub-btn")).find(btn => {
+            const onclickValue = btn.getAttribute("onclick") || "";
+            return onclickValue.includes("'" + url + "'");
+        });
+
+        if (matchingButton) {
+            matchingButton.classList.add("active-sub");
+        }
+    };
+
+    window.openSingleModule = function(navButton, url, title, subtitle) {
+        if (currentUserRole === "limitedEncoder") {
+            const allowedSingleModules = [];
+            if (!allowedSingleModules.includes(url)) {
+                alert("You do not have access to this module.");
+                return;
+            }
+        }
+
+        if (currentUserRole === "viewer") {
+            const blockedViewerSingle = [
+                "admin-manager.html",
+                "donor-import.html",
+                "donor-import-cleanup.html",
+                "backup-viewer.html"
+            ];
+
+            if (blockedViewerSingle.includes(url)) {
+                alert("You do not have access to this module.");
+                return;
+            }
+        }
+
+        clearActiveNavs();
+        navButton.classList.add("active");
+        clearActiveSubs();
+        closeAllSections();
+        navButton.classList.add("active");
+        showModuleFrame();
+        frame.src = buildFreshUrl(url);
+        workspaceTitle.textContent = title;
+        workspaceSubtitle.textContent = subtitle || "";
+    };
+
+    window.reloadFrame = function() {
+        if (frame.classList.contains("hidden-view")) return;
+        const currentRaw = frame.getAttribute("src") || frame.src || "";
+        if (!currentRaw) return;
+        const cleanCurrent = currentRaw.split("?")[0];
+        frame.src = buildFreshUrl(cleanCurrent);
+    };
+
+    async function getRealtimeDatabaseBackup() {
+        const paths = [
+            "admins",
+            "userRoles",
+            "donorDatabase",
+            "galloner",
+            "partnerOrganizations",
+            "bloodDriveEvents",
+            "releasing",
+            "facilities",
+            "settings",
+            "activityLogs"
+        ];
+
+        const backup = {};
+
+        for (const path of paths) {
+            const snapshot = await get(ref(db, path));
+            backup[path] = snapshot.exists() ? snapshot.val() : {};
+        }
+
+        return backup;
+    }
+
+    async function buildBackupData() {
+        const realtimeData = await getRealtimeDatabaseBackup();
+
+        return {
+            metadata: {
+                project: "prc-baguio-bss",
+                exportedAt: new Date().toISOString(),
+                exportedBy: auth.currentUser?.email || "",
+                type: "monthly-backup",
+                database: "realtime-database-only"
+            },
+            realtimeDatabase: realtimeData
+        };
+    }
+
+    window.downloadBackupFile = async function() {
+        if (currentUserRole === "limitedEncoder" || currentUserRole === "viewer") {
+            alert("You do not have access to backup functions.");
+            return;
+        }
+
+        try {
+            if (!auth.currentUser) {
+                alert("You are not logged in.");
+                window.location.href = "index.html";
+                return;
+            }
+
+            const now = new Date();
+            const month = String(now.getMonth() + 1).padStart(2, "0");
+            const day = String(now.getDate()).padStart(2, "0");
+
+            const backupData = await buildBackupData();
+
+            const fileName = `prc-baguio-bss-backup-${now.getFullYear()}-${month}-${day}.json`;
+            const json = JSON.stringify(backupData, null, 2);
+            const blob = new Blob([json], { type: "application/json" });
+
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            alert("Backup file downloaded successfully.");
+        } catch (error) {
+            console.error("Download backup error:", error);
+            alert("Backup file download failed.");
+        }
+    };
+
+    window.saveBackupToSystem = async function() {
+        if (currentUserRole === "limitedEncoder" || currentUserRole === "viewer") {
+            alert("You do not have access to backup functions.");
+            return;
+        }
+
+        try {
+            if (!auth.currentUser) {
+                alert("You are not logged in.");
+                window.location.href = "index.html";
+                return;
+            }
+
+            const now = new Date();
+            const month = String(now.getMonth() + 1).padStart(2, "0");
+            const day = String(now.getDate()).padStart(2, "0");
+            const hour = String(now.getHours()).padStart(2, "0");
+            const minute = String(now.getMinutes()).padStart(2, "0");
+            const second = String(now.getSeconds()).padStart(2, "0");
+            const backupKey = `${now.getFullYear()}-${month}-${day}_${hour}-${minute}-${second}`;
+
+            const backupData = await buildBackupData();
+            await set(ref(db, "backups/" + backupKey), backupData);
+
+            alert("Backup saved to system successfully.");
+        } catch (error) {
+            console.error("Save system backup error:", error);
+            alert("Saving backup to system failed.");
+        }
+    };
+
+    window.logout = async function() {
+        try {
+            await signOut(auth);
+            alert("Logged out successfully.");
+            window.location.href = "index.html";
+        } catch (error) {
+            console.error("Logout error:", error);
+            alert("Logout failed.");
+        }
+    };
 </script>
 
 </body>
