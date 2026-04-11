@@ -81,6 +81,15 @@
             flex-shrink: 0;
         }
 
+        .welcome-logo{
+            width: 122px;
+            max-width: 32vw;
+            height: auto;
+            display: block;
+            margin: 0 auto 18px;
+            filter: drop-shadow(0 6px 14px rgba(0,0,0,0.10));
+        }
+
         .title-block{
             min-width: 0;
         }
@@ -460,17 +469,6 @@
             background: linear-gradient(90deg, #8d0000, #c11717, #e13a3a);
         }
 
-        .welcome-card::after{
-            content:"";
-            position:absolute;
-            inset:auto -80px -80px auto;
-            width:220px;
-            height:220px;
-            border-radius:50%;
-            background: radial-gradient(circle, rgba(179,0,0,0.06), transparent 70%);
-            pointer-events:none;
-        }
-
         .welcome-badge{
             display: inline-flex;
             align-items: center;
@@ -483,15 +481,6 @@
             font-weight: 800;
             border: 1px solid #f1caca;
             margin-bottom: 16px;
-        }
-
-        .welcome-logo{
-            width: 122px;
-            max-width: 32vw;
-            height: auto;
-            display: block;
-            margin: 0 auto 18px;
-            filter: drop-shadow(0 6px 14px rgba(0,0,0,0.10));
         }
 
         .welcome-title{
@@ -634,7 +623,7 @@
 
     <div class="topbar">
         <div class="topbar-left">
-            <img src="images/logo.png" class="logo">
+            <img id="topLogo" src="images/logo.png" class="logo" alt="PRC Logo">
             <div class="title-block">
                 <h1>Philippine Red Cross</h1>
                 <div class="sub">Baguio City Chapter</div>
@@ -686,22 +675,6 @@
                     <button id="btn-donor-entry" class="sub-btn red" onclick="openModule('donor-entry.html','Donor Entry','')">Donor Entry</button>
                     <button id="btn-tracking" class="sub-btn red" onclick="openModule('tracking.html','Tracking','')">Tracking</button>
                     <button id="btn-awardees" class="sub-btn purple" onclick="openModule('awardees.html','Awardees','')">Awardees</button>
-                </div>
-
-                <button id="nav-events" class="nav-btn" onclick="toggleSection('events')">
-                    <span class="nav-left">
-                        <span class="nav-icon">📅</span>
-                        <span class="nav-text">
-                            <span class="nav-label">Blood Drive Events</span>
-                            <span class="nav-hint">Entry, tracking, statistics</span>
-                        </span>
-                    </span>
-                    <span class="nav-arrow">▼</span>
-                </button>
-                <div id="section-events" class="submenu">
-                    <button id="btn-events-entry" class="sub-btn blue" onclick="openModule('blood-drive-entry.html','Blood Drive Events - Entry','')">Entry</button>
-                    <button id="btn-events-tracking" class="sub-btn blue" onclick="openModule('blood-drive-tracking.html','Blood Drive Events - Tracking','')">Tracking</button>
-                    <button id="btn-events-stat" class="sub-btn green" onclick="openModule('blood-drive-statistics.html','Blood Drive Events - Statistics','')">Statistics</button>
                 </div>
 
                 <button id="nav-partner" class="nav-btn" onclick="openSingleModule(this,'partner-organization.html','Partner Organization','')">
@@ -809,7 +782,7 @@
                 <div id="welcomePanel" class="welcome-panel">
                     <div class="welcome-card">
                         <div class="welcome-badge">● Blood Services Workspace</div>
-                        <img src="images/logo.png" class="welcome-logo" alt="PRC Logo">
+                        <img id="welcomeLogo" src="images/logo.png" class="welcome-logo" alt="PRC Logo">
                         <div class="welcome-title">Philippine Red Cross</div>
                         <div class="welcome-subtitle">Baguio City Chapter</div>
 
@@ -825,14 +798,14 @@
                                 <div class="welcome-mini-sub">Manage donor entry, tracking, and awardees.</div>
                             </div>
                             <div class="welcome-mini">
-                                <div class="welcome-mini-icon">📅</div>
-                                <div class="welcome-mini-title">Events</div>
-                                <div class="welcome-mini-sub">Coordinate blood drive event entry, tracking, and summaries.</div>
-                            </div>
-                            <div class="welcome-mini">
                                 <div class="welcome-mini-icon">💉</div>
                                 <div class="welcome-mini-title">Releasing</div>
                                 <div class="welcome-mini-sub">Clean workflow for blood issue, monitoring, and facility use.</div>
+                            </div>
+                            <div class="welcome-mini">
+                                <div class="welcome-mini-icon">🗂️</div>
+                                <div class="welcome-mini-title">System Control</div>
+                                <div class="welcome-mini-sub">Manage imports, backups, and administration securely.</div>
                             </div>
                         </div>
                     </div>
@@ -864,7 +837,7 @@
     const auth = getAuth(app);
     const db = getDatabase(app);
 
-    const sections = ["donor-database", "galloner", "events", "releasing", "backup"];
+    const sections = ["donor-database", "galloner", "releasing", "backup"];
     const frame = document.getElementById("moduleFrame");
     const welcomePanel = document.getElementById("welcomePanel");
     const workspaceTitle = document.getElementById("workspaceTitle");
@@ -873,6 +846,21 @@
 
     let currentUserRole = "admin";
 
+    function setLogoFallback() {
+        const logos = [
+            document.getElementById("topLogo"),
+            document.getElementById("welcomeLogo")
+        ];
+
+        logos.forEach(img => {
+            img.onerror = function () {
+                this.style.display = "none";
+            };
+        });
+    }
+
+    setLogoFallback();
+
     onAuthStateChanged(auth, async (user) => {
         if (!user) {
             window.location.href = "index.html";
@@ -880,16 +868,27 @@
         }
 
         try {
-            const rolePath = "userRoles/" + user.uid + "/role";
-            const roleSnapshot = await get(ref(db, rolePath));
-            currentUserRole = roleSnapshot.exists() ? roleSnapshot.val() : "admin";
+            const roleSnapshot = await get(ref(db, "userRoles/" + user.uid + "/role"));
+
+            if (roleSnapshot.exists()) {
+                currentUserRole = roleSnapshot.val();
+            } else {
+                currentUserRole = "admin";
+            }
 
             applyRoleAccess(currentUserRole);
             showWelcomeHome();
         } catch (error) {
             console.error("Role loading error:", error);
-            alert("Role loading error: " + error.message);
 
+            if (error && String(error.message || "").toLowerCase().includes("permission denied")) {
+                currentUserRole = "admin";
+                applyRoleAccess(currentUserRole);
+                showWelcomeHome();
+                return;
+            }
+
+            alert("Role loading error: " + error.message);
             currentUserRole = "admin";
             applyRoleAccess(currentUserRole);
             showWelcomeHome();
@@ -963,8 +962,6 @@
         showElement("section-donor-database");
         showElement("nav-galloner");
         showElement("section-galloner");
-        showElement("nav-events");
-        showElement("section-events");
         showElement("nav-partner");
         showElement("nav-releasing");
         showElement("section-releasing");
@@ -980,9 +977,11 @@
         showElement("btn-donor-entry");
         showElement("btn-tracking");
         showElement("btn-awardees");
-        showElement("btn-events-entry");
-        showElement("btn-events-tracking");
-        showElement("btn-events-stat");
+        showElement("btn-releasing-main");
+        showElement("btn-releasing-entry");
+        showElement("btn-releasing-tracking");
+        showElement("btn-releasing-stats");
+        showElement("btn-facility-manager");
         showElement("btn-backup-download");
         showElement("btn-backup-save");
         showElement("btn-backup-viewer");
@@ -991,7 +990,6 @@
             topbarRoleText.textContent = "Limited Encoder Access";
 
             hideElement("btn-donor-db-stat");
-            hideElement("btn-events-stat");
             hideElement("nav-partner");
             hideElement("nav-releasing");
             hideElement("section-releasing");
@@ -1009,7 +1007,6 @@
 
             hideElement("btn-donor-db-entry");
             hideElement("btn-donor-entry");
-            hideElement("btn-events-entry");
             hideElement("btn-releasing-entry");
             hideElement("nav-bulk-import");
             hideElement("nav-donor-cleanup");
@@ -1022,7 +1019,7 @@
     }
 
     window.toggleSection = function(name) {
-        if (currentUserRole === "limitedEncoder" && !["donor-database", "galloner", "events"].includes(name)) {
+        if (currentUserRole === "limitedEncoder" && !["donor-database", "galloner"].includes(name)) {
             return;
         }
 
@@ -1048,9 +1045,7 @@
                 "donor-database-tracking.html",
                 "donor-entry.html",
                 "tracking.html",
-                "awardees.html",
-                "blood-drive-entry.html",
-                "blood-drive-tracking.html"
+                "awardees.html"
             ];
 
             if (!allowedModules.includes(url)) {
@@ -1063,7 +1058,6 @@
             const blockedViewerModules = [
                 "donor-database-entry.html",
                 "donor-entry.html",
-                "blood-drive-entry.html",
                 "releasing-entry.html",
                 "admin-manager.html",
                 "donor-import.html",
@@ -1142,7 +1136,6 @@
             "donorDatabase",
             "galloner",
             "partnerOrganizations",
-            "bloodDriveEvents",
             "releasing",
             "facilities",
             "settings",
