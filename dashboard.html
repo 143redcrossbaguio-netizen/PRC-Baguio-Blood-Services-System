@@ -880,15 +880,8 @@
             showWelcomeHome();
         } catch (error) {
             console.error("Role loading error:", error);
-
-            if (error && String(error.message || "").toLowerCase().includes("permission denied")) {
-                currentUserRole = "admin";
-                applyRoleAccess(currentUserRole);
-                showWelcomeHome();
-                return;
-            }
-
             alert("Role loading error: " + error.message);
+
             currentUserRole = "admin";
             applyRoleAccess(currentUserRole);
             showWelcomeHome();
