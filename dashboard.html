@@ -1,828 +1,894 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Philippine Red Cross - Dashboard</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donor Database Entry</title>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
     <style>
         * { box-sizing: border-box; }
 
-        :root{
-            --prc-red:#b30000;
-            --prc-red-dark:#7f0000;
-            --prc-red-soft:#fdf1f1;
-            --prc-rose:#fff7f7;
-            --bg:#eaf0f5;
-            --bg-soft:#f4f7fa;
-            --panel:#ffffff;
-            --panel-soft:#fbfcfe;
-            --line:#d7e0e8;
-            --text:#1f2937;
-            --muted:#667085;
-            --muted-dark:#475467;
-            --blue:#0f52ba;
-            --green:#166534;
-            --orange:#a64b00;
-            --purple:#6b21a8;
-            --shadow:0 14px 30px rgba(15,23,42,0.08);
-            --radius:18px;
-        }
-
-        html, body {
+        body {
             margin: 0;
-            height: 100%;
             font-family: Arial, sans-serif;
-            background:
-                radial-gradient(circle at top left, #f7fafc 0%, #edf2f7 35%, #e8eef4 100%);
-            color: var(--text);
+            background: #eef2f6;
+            color: #1f2937;
         }
 
-        body{
-            overflow: hidden;
-        }
-
-        .app-shell{
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .topbar{
-            background:
-                linear-gradient(90deg, rgba(255,255,255,0.08), rgba(255,255,255,0)),
-                linear-gradient(90deg, #7a0000 0%, #a50000 45%, #c01818 100%);
+        header {
+            background: linear-gradient(90deg, #8b0000, #b30000);
             color: white;
-            padding: 12px 18px;
+            padding: 10px 18px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-bar {
             display: flex;
-            align-items: center;
             justify-content: space-between;
+            align-items: center;
             gap: 16px;
-            box-shadow: 0 3px 14px rgba(0,0,0,0.18);
-            flex-shrink: 0;
-            border-bottom: 2px solid rgba(255,255,255,0.08);
-        }
-
-        .topbar-left{
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            min-width: 0;
-        }
-
-        .logo{
-            width: 52px;
-            height: 52px;
-            object-fit: contain;
-            background: white;
-            border-radius: 50%;
-            padding: 4px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.16);
-            flex-shrink: 0;
-        }
-
-        .welcome-logo{
-            width: 122px;
-            max-width: 32vw;
-            height: auto;
-            display: block;
-            margin: 0 auto 18px;
-            filter: drop-shadow(0 6px 14px rgba(0,0,0,0.10));
-        }
-
-        .title-block{
-            min-width: 0;
-        }
-
-        .title-block h1{
-            margin: 0;
-            font-size: 20px;
-            line-height: 1.1;
-            font-weight: 700;
-            letter-spacing: .2px;
-        }
-
-        .title-block .sub{
-            font-size: 12px;
-            opacity: 0.95;
-            margin-top: 4px;
-        }
-
-        .topbar-right{
-            font-size: 13px;
-            font-weight: bold;
-            background: rgba(255,255,255,0.12);
-            padding: 9px 14px;
-            border-radius: 999px;
-            border: 1px solid rgba(255,255,255,0.14);
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
-            white-space: nowrap;
-        }
-
-        .layout{
-            flex: 1;
-            display: grid;
-            grid-template-columns: 300px 1fr;
-            min-height: 0;
-        }
-
-        .sidebar{
-            background:
-                linear-gradient(180deg, #ffffff 0%, #f7fafc 100%);
-            border-right: 1px solid var(--line);
-            padding: 14px 12px;
-            overflow-y: auto;
-            position: relative;
-        }
-
-        .sidebar::before{
-            content:"";
-            position:absolute;
-            top:0;
-            left:0;
-            right:0;
-            height:74px;
-            background: linear-gradient(180deg, rgba(179,0,0,0.08), rgba(179,0,0,0));
-            pointer-events:none;
-        }
-
-        .sidebar-brand{
-            position: relative;
-            z-index: 1;
-            background: linear-gradient(135deg, #ffffff, #fbfcfe);
-            border: 1px solid #e7edf4;
-            border-radius: 18px;
-            padding: 14px 14px 12px;
-            margin-bottom: 14px;
-            box-shadow: 0 6px 18px rgba(15,23,42,0.05);
-            cursor: pointer;
-            transition: all .18s ease;
-        }
-
-        .sidebar-brand:hover{
-            transform: translateY(-1px);
-            box-shadow: 0 8px 20px rgba(15,23,42,0.07);
-            border-color: #f0caca;
-        }
-
-        .sidebar-brand-title{
-            font-size: 15px;
-            font-weight: 800;
-            color: var(--prc-red-dark);
-            margin-bottom: 4px;
-        }
-
-        .sidebar-brand-sub{
-            font-size: 12px;
-            color: var(--muted);
-            line-height: 1.5;
-        }
-
-        .sidebar-title{
-            font-size: 11px;
-            font-weight: bold;
-            color: #6b7280;
-            text-transform: uppercase;
-            margin: 10px 10px 10px;
-            letter-spacing: .9px;
-        }
-
-        .nav-group{
-            margin-bottom: 18px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .nav-btn{
-            width: 100%;
-            border: 1px solid #e3e9f0;
-            border-radius: 14px;
-            padding: 13px 14px;
-            margin-bottom: 8px;
-            text-align: left;
-            font-weight: bold;
-            cursor: pointer;
-            color: var(--text);
-            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-            transition: all .18s ease;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            box-shadow: 0 2px 6px rgba(15,23,42,0.03);
-        }
-
-        .nav-btn:hover{
-            background: linear-gradient(180deg, #fff8f8 0%, #fff1f1 100%);
-            border-color: #f0c8c8;
-            transform: translateY(-1px);
-        }
-
-        .nav-btn.active{
-            background: linear-gradient(135deg, #920000, #c31616);
-            color: white;
-            border-color: #920000;
-            box-shadow: 0 8px 18px rgba(179,0,0,0.20);
-        }
-
-        .nav-left{
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            min-width: 0;
-        }
-
-        .nav-icon{
-            width: 30px;
-            height: 30px;
-            border-radius: 10px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background: #f3f6fa;
-            font-size: 14px;
-            flex-shrink: 0;
-        }
-
-        .nav-btn.active .nav-icon{
-            background: rgba(255,255,255,0.18);
-        }
-
-        .nav-text{
-            min-width: 0;
-        }
-
-        .nav-label{
-            display:block;
-            font-size: 14px;
-            line-height: 1.15;
-        }
-
-        .nav-hint{
-            display:block;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--muted);
-            margin-top: 2px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .nav-btn.active .nav-hint{
-            color: rgba(255,255,255,0.88);
-        }
-
-        .nav-arrow{
-            font-size: 12px;
-            opacity: 0.9;
-            flex-shrink: 0;
-            transition: transform .18s ease;
-        }
-
-        .nav-btn.active .nav-arrow{
-            transform: rotate(180deg);
-        }
-
-        .submenu{
-            display: none;
-            padding: 4px 0 8px 14px;
-            margin-top: -2px;
-            border-left: 2px solid #e7edf4;
-            margin-left: 14px;
-            animation: fadeIn .18s ease;
-        }
-
-        .submenu.open{
-            display: block;
-        }
-
-        @keyframes fadeIn{
-            from{ opacity:0; transform: translateY(-4px); }
-            to{ opacity:1; transform: translateY(0); }
-        }
-
-        .sub-btn{
-            width: 100%;
-            border: 1px solid transparent;
-            border-radius: 12px;
-            padding: 11px 12px;
-            margin-bottom: 6px;
-            text-align: left;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all .18s ease;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-            position: relative;
-        }
-
-        .sub-btn:hover{
-            transform: translateX(2px);
-        }
-
-        .sub-btn.active-sub{
-            border-color: var(--prc-red);
-            box-shadow: 0 0 0 2px rgba(179,0,0,0.12);
-        }
-
-        .sub-btn::before{
-            content:"";
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 9px;
-            vertical-align: middle;
-            background: currentColor;
-            opacity: 0.65;
-        }
-
-        .sub-btn.red{ background:#fdeaea; color:#8b0000; }
-        .sub-btn.orange{ background:#fff1e6; color:#a64b00; }
-        .sub-btn.green{ background:#e9f8ef; color:#166534; }
-        .sub-btn.blue{ background:#e8f1ff; color:#0f52ba; }
-        .sub-btn.purple{ background:#f1e9ff; color:#6b21a8; }
-        .sub-btn.gray{ background:#eceff3; color:#374151; }
-
-        .logout-wrap{
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid #e6edf5;
-            position: relative;
-            z-index: 1;
-        }
-
-        .logout-btn{
-            width: 100%;
-            border: none;
-            border-radius: 14px;
-            padding: 14px;
-            background: linear-gradient(135deg, #2f2f2f, #494949);
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.12);
-        }
-
-        .workspace{
-            display: flex;
-            flex-direction: column;
-            min-height: 0;
-            background:
-                linear-gradient(135deg, #edf3f7 0%, #f7f3f3 45%, #eef4f8 100%);
-        }
-
-        .workspace-header{
-            background: linear-gradient(180deg, #fbfcfd 0%, #f6f8fb 100%);
-            border-bottom: 1px solid #dbe3ec;
-            padding: 13px 16px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            flex-shrink: 0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-            min-height: 74px;
-        }
-
-        .workspace-title{
-            font-size: 19px;
-            font-weight: 800;
-            color: #111827;
-            letter-spacing: 0.1px;
-        }
-
-        .workspace-subtitle{
-            display: none;
-        }
-
-        .workspace-actions{
-            display: flex;
-            gap: 8px;
             flex-wrap: wrap;
         }
 
-        .action-btn{
-            border: none;
-            border-radius: 10px;
-            padding: 10px 13px;
-            cursor: pointer;
+        .header-title {
+            font-size: 0;
             font-weight: bold;
-            color: white;
-            background: linear-gradient(135deg, #1565c0, #1e88e5);
-            box-shadow: 0 5px 10px rgba(21,101,192,0.18);
+            text-align: left;
+            min-width: 0;
         }
 
-        .iframe-wrap{
-            flex: 1;
-            min-height: 0;
-            padding: 18px;
-            position: relative;
-        }
-
-        .module-frame{
-            width: 100%;
-            height: 100%;
-            border: 1px solid #dbe3ec;
-            border-radius: 22px;
-            background: white;
-            box-shadow: var(--shadow);
-        }
-
-        .welcome-panel{
-            width: 100%;
-            height: 100%;
-            border: 1px solid #d8e2ea;
-            border-radius: 22px;
-            background:
-                radial-gradient(circle at top right, rgba(179,0,0,0.08), transparent 28%),
-                radial-gradient(circle at bottom left, rgba(15,82,186,0.06), transparent 24%),
-                linear-gradient(135deg, #f4f8fb 0%, #fbf7f7 52%, #f1f6fa 100%);
+        .header-actions {
             display: flex;
             align-items: center;
-            justify-content: center;
-            padding: 34px;
-            box-shadow: 0 14px 36px rgba(15,23,42,0.08);
+            gap: 10px;
+            flex-wrap: wrap;
+            width: 100%;
+            justify-content: flex-end;
         }
 
-        .welcome-card{
-            width: min(760px, 100%);
-            text-align: center;
-            background:
-                linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(250,252,253,0.98) 100%);
-            border: 1px solid #dde6ee;
-            border-radius: 28px;
-            padding: 38px 30px 28px;
-            box-shadow: 0 18px 38px rgba(127,0,0,0.08);
-            position: relative;
-            overflow: hidden;
-            backdrop-filter: blur(4px);
-        }
-
-        .welcome-card::before{
-            content:"";
-            position:absolute;
-            top:0;
-            left:0;
-            right:0;
-            height:8px;
-            background: linear-gradient(90deg, #8d0000, #c11717, #e13a3a);
-        }
-
-        .welcome-badge{
-            display: inline-flex;
+        .header-find-wrap {
+            display: flex;
             align-items: center;
             gap: 8px;
-            padding: 8px 14px;
-            border-radius: 999px;
-            background: linear-gradient(180deg, #fff5f5, #fff0f0);
-            color: #8b0000;
+            flex: 1 1 420px;
+            min-width: 280px;
+            max-width: 620px;
+        }
+
+        .header-find-label {
+            color: #fff;
             font-size: 12px;
-            font-weight: 800;
-            border: 1px solid #f1caca;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .header-find-input {
+            width: 100%;
+            min-width: 180px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.32);
+            background: rgba(255,255,255,0.94);
+            color: #1f2937;
+            font-size: 13px;
+        }
+
+        .header-find-input:focus {
+            outline: none;
+            border-color: #93c5fd;
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.18);
+        }
+
+        .page {
+            max-width: 1180px;
+            margin: 12px auto;
+            padding: 0 10px 16px;
+        }
+
+        .lis-panel {
+            background: white;
+            border: 1px solid #dbe3ec;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            overflow: hidden;
             margin-bottom: 16px;
         }
 
-        .welcome-title{
-            font-size: 31px;
-            font-weight: 800;
-            line-height: 1.15;
-            color: #9a0000;
-            margin-bottom: 6px;
-            letter-spacing: 0.2px;
+        .panel-head {
+            background: #dde7f1;
+            color: #243447;
+            font-weight: bold;
+            padding: 9px 12px;
+            border-bottom: 1px solid #d4dde7;
+            font-size: 13px;
         }
 
-        .welcome-subtitle{
-            font-size: 19px;
-            color: #344054;
-            font-weight: 700;
-            margin-bottom: 22px;
-        }
-
-        .welcome-grid{
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 14px;
-            margin-top: 8px;
-        }
-
-        .welcome-mini{
-            background: linear-gradient(180deg, #ffffff, #f7fafc);
-            border: 1px solid #dce5ed;
-            border-radius: 18px;
-            padding: 16px 12px;
-            box-shadow: 0 4px 12px rgba(15,23,42,0.04);
-        }
-
-        .welcome-mini-icon{
-            font-size: 22px;
+        .collapse-btn {
+            width: 100%;
+            border: 1px solid #efc6c6;
+            border-radius: 10px;
+            background: linear-gradient(180deg, #fff7f7 0%, #ffe9e9 100%);
+            color: #8a1111;
+            font-weight: bold;
+            padding: 9px 12px;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
             margin-bottom: 8px;
         }
 
-        .welcome-mini-title{
+        .collapse-btn .chevron {
+            font-size: 12px;
+            transition: transform 0.2s ease;
+        }
+
+        .collapse-btn.open .chevron {
+            transform: rotate(180deg);
+        }
+
+        .collapse-content.hidden {
+            display: none;
+        }
+
+        .panel-body {
+            padding: 12px;
+        }
+
+        .auth-indicator {
+            padding: 8px 12px;
+            border-radius: 8px;
             font-size: 13px;
-            font-weight: 800;
-            color: #111827;
-            margin-bottom: 6px;
+            font-weight: bold;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.28);
+            color: #fff;
+            min-width: 220px;
+            text-align: center;
         }
 
-        .welcome-mini-sub{
+        .reload-btn {
+            padding: 8px 12px;
+            font-size: 13px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            background: #1976d2;
+            color: #fff;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.14);
+        }
+
+        .reload-btn:hover {
+            background: #1565c0;
+        }
+
+        .lookup-sticky {
+            position: sticky;
+            top: 66px;
+            z-index: 900;
+        }
+
+        .field-row {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 10px 12px;
+        }
+
+        .full-width { grid-column: 1 / -1; }
+        .span-1 { grid-column: span 1; }
+        .span-2 { grid-column: span 2; }
+        .span-3 { grid-column: span 3; }
+        .span-4 { grid-column: span 4; }
+        .span-5 { grid-column: span 5; }
+        .span-6 { grid-column: span 6; }
+        .span-7 { grid-column: span 7; }
+        .span-8 { grid-column: span 8; }
+        .span-9 { grid-column: span 9; }
+        .span-10 { grid-column: span 10; }
+        .span-11 { grid-column: span 11; }
+        .span-12 { grid-column: span 12; }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .field-group label {
+            font-weight: bold;
+            margin-bottom: 4px;
+            font-size: 13px;
+            color: #334155;
+        }
+
+        .field-group input,
+        .field-group select,
+        .field-group textarea {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 13px;
+            background: #fff;
+        }
+
+        .field-group input:focus,
+        .field-group select:focus,
+        .field-group textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+        }
+
+        .readonly-fill {
+            background: #f8fafc !important;
+        }
+
+        .serial-main-box {
+            border: 1px solid #bfd5f7;
+            border-radius: 12px;
+            background: linear-gradient(180deg, #f4f8ff 0%, #e8f1ff 100%);
+            padding: 12px;
+        }
+
+        .serial-wrap {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .serial-prefix {
+            background: #dce9ff;
+            border: 1px solid #b9cced;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            white-space: nowrap;
+            color: #334155;
+            min-height: 42px;
+            display: flex;
+            align-items: center;
+        }
+
+        .radio-box {
+            border: 1px solid #dbe3ec;
+            border-radius: 10px;
+            padding: 12px;
+            background: #f8fafc;
+        }
+
+        .serial-tools-box {
+            border: 1px solid #efc6c6;
+            border-radius: 12px;
+            padding: 12px;
+            background: linear-gradient(180deg, #fff7f7 0%, #ffe9e9 100%);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+        }
+
+        .range-type-box {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.75);
+            border: 1px solid #f0c8c8;
+        }
+
+        .radio-options,
+        .range-type-options,
+        .inline-toggle {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px 18px;
+            align-items: center;
+        }
+
+        .radio-options label,
+        .range-type-options label,
+        .inline-toggle label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin: 0;
+            font-weight: normal;
+            cursor: pointer;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .group-info,
+        .loaded-donor-info,
+        .type-helper,
+        .serial-helper,
+        .time-helper,
+        .serial-batch-info,
+        .range-type-info {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .group-info {
+            background: #fff5f5;
+            border: 1px solid #efc6c6;
+            color: #8a1111;
+        }
+
+        .loaded-donor-info {
+            background: #edf7ed;
+            border: 1px solid #b7dfb9;
+            color: #166534;
+        }
+
+        .type-helper {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1d4ed8;
+        }
+
+        .serial-helper {
+            background: #edf4ff;
+            border: 1px solid #bfd5f7;
+            color: #274690;
+        }
+
+        .time-helper {
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            color: #9a3412;
+        }
+
+        .serial-batch-info {
+            background: #fff;
+            border: 1px solid #efc6c6;
+            color: #8a1111;
+            margin-top: 8px;
+            padding: 7px 9px;
             font-size: 11px;
-            color: #667085;
-            line-height: 1.6;
         }
 
-        .hidden-role{
-            display: none !important;
+        .range-type-info {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            color: #075985;
+            font-size: 12px;
+            padding: 8px 10px;
         }
 
-        .hidden-view{
-            display: none !important;
+        .helper-text {
+            margin-top: 4px;
+            font-size: 12px;
+            color: #64748b;
         }
 
-        @media (max-width: 1100px){
-            .welcome-grid{
-                grid-template-columns: repeat(2, 1fr);
+        .lookup-results {
+            margin-top: 14px;
+            border: 1px solid #dbe3ec;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .lookup-table-wrap {
+            max-height: 260px;
+            overflow: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 900px;
+        }
+
+        th, td {
+            border-bottom: 1px solid #e5e7eb;
+            padding: 9px 10px;
+            text-align: left;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        th {
+            background: #f1f5f9;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .small-btn,
+        .main-btn {
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .small-btn {
+            padding: 7px 9px;
+            font-size: 11px;
+        }
+
+        .main-btn {
+            padding: 10px 16px;
+            font-size: 13px;
+        }
+
+        .blue-btn { background: #1565c0; color: white; }
+        .green-btn { background: #2e7d32; color: white; }
+        .gray-btn { background: #64748b; color: white; }
+        .red-btn { background: #8a1111; color: white; }
+        .orange-btn { background: #c56a00; color: white; }
+
+        .btn-row,
+        .serial-btn-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 18px;
+        }
+
+        textarea {
+            min-height: 85px;
+            resize: vertical;
+        }
+
+        .status-message {
+            margin-top: 14px;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            display: none;
+        }
+
+        .status-success {
+            display: block;
+            background: #e8f7e8;
+            color: #1b5e20;
+            border: 1px solid #b7dfb9;
+        }
+
+        .status-error {
+            display: block;
+            background: #fdeaea;
+            color: #b71c1c;
+            border: 1px solid #efb7b7;
+        }
+
+        .section-note {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: -4px;
+            margin-bottom: 12px;
+        }
+
+        .serial-batch-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 10px;
+            margin-top: 6px;
+        }
+
+        .preview-box {
+            margin-top: 8px;
+            padding: 8px 10px;
+            background: rgba(255,255,255,0.8);
+            border: 1px dashed #e3a4a4;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #5b1c1c;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 1100px) {
+            .form-grid,
+            .serial-batch-grid {
+                grid-template-columns: repeat(6, 1fr);
+            }
+
+            .span-1, .span-2, .span-3, .span-4, .span-5, .span-6,
+            .span-7, .span-8, .span-9, .span-10, .span-11, .span-12 {
+                grid-column: span 6;
+            }
+
+            .field-row,
+            .serial-wrap {
+                grid-template-columns: 1fr;
             }
         }
 
-        @media (max-width: 980px){
-            .layout{
+        @media (max-width: 700px) {
+            .form-grid,
+            .serial-batch-grid {
                 grid-template-columns: 1fr;
             }
 
-            .sidebar{
-                border-right: none;
-                border-bottom: 1px solid var(--line);
-                max-height: 44vh;
+            .span-1, .span-2, .span-3, .span-4, .span-5, .span-6,
+            .span-7, .span-8, .span-9, .span-10, .span-11, .span-12 {
+                grid-column: span 1;
             }
 
-            .welcome-grid{
-                grid-template-columns: 1fr;
+            .header-bar {
+                flex-direction: column;
+                align-items: stretch;
             }
 
-            .welcome-title{
-                font-size: 24px;
+            .header-title,
+            .auth-indicator {
+                text-align: center;
             }
 
-            .welcome-subtitle{
-                font-size: 16px;
-            }
-        }
-
-        @media (max-width: 640px){
-            .topbar{
-                padding: 10px 12px;
-                flex-wrap: wrap;
-            }
-
-            .logo{
-                width: 46px;
-                height: 46px;
-            }
-
-            .title-block h1{
-                font-size: 17px;
-            }
-
-            .workspace-header{
-                flex-direction: row;
-                align-items: center;
-            }
-
-            .welcome-panel{
-                padding: 18px;
-            }
-
-            .welcome-card{
-                padding: 26px 18px 20px;
-            }
-
-            .welcome-logo{
-                width: 94px;
-            }
-
-            .welcome-title{
-                font-size: 21px;
-            }
-
-            .welcome-subtitle{
-                font-size: 14px;
-            }
-
-            .nav-hint{
-                display: none;
+            .lookup-sticky {
+                top: 88px;
             }
         }
     </style>
 </head>
-
 <body>
 
-<div class="app-shell">
-
-    <div class="topbar">
-        <div class="topbar-left">
-            <img id="topLogo" src="images/logo.png" class="logo" alt="PRC Logo">
-            <div class="title-block">
-                <h1>Philippine Red Cross</h1>
-                <div class="sub">Baguio City Chapter</div>
+<header>
+    <div class="header-bar">
+        <div class="header-title"></div>
+        <div class="header-actions">
+            <div class="header-find-wrap">
+                <span class="header-find-label">Find Existing Donor</span>
+                <input type="text" id="lookupSearch" class="header-find-input" placeholder="Live search surname, first name, middle name, birthday, blood type">
             </div>
+            <div id="authIndicator" class="auth-indicator">Checking login status...</div>
+            <button type="button" id="reloadPageBtn" class="reload-btn">Reload</button>
         </div>
-        <div class="topbar-right" id="topbarRoleText">
-            Blood Services Panel
+    </div>
+</header>
+
+<div class="page">
+
+    <div class="lis-panel lookup-sticky">
+        <div class="panel-body" style="padding-top:10px; padding-bottom:10px;">
+            <div id="loadedDonorInfo" class="loaded-donor-info hidden"></div>
+
+            <div id="lookupResultsBox" class="lookup-results hidden">
+                <div class="lookup-table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Action</th>
+                                <th>Surname</th>
+                                <th>First Name</th>
+                                <th>Middle Name</th>
+                                <th>Birthday</th>
+                                <th>Blood Type</th>
+                                <th>Last Entry Date</th>
+                                <th>Type of Donor</th>
+                                <th># of Donations</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lookupResultsBody"></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="layout">
+    <div class="lis-panel">
+        <div class="panel-head">Donor Entry Form</div>
+        <div class="panel-body">
+            <div class="section-note">Converted to PRC Baguio Blood Services System using Realtime Database only.</div>
 
-        <aside class="sidebar">
-            <div class="sidebar-brand" onclick="goDashboardHome()">
-                <div class="sidebar-brand-title">Red Cross Dashboard</div>
-                <div class="sidebar-brand-sub">Click to return to dashboard home</div>
-            </div>
+            <form id="donorForm" novalidate>
+                <div class="form-grid">
 
-            <div class="nav-group">
-                <div class="sidebar-title">Main Modules</div>
+                    <div class="field-group span-12">
+                        <label for="entryDate">Date</label>
+                        <input type="date" id="entryDate" required>
+                    </div>
 
-                <button id="nav-donor-database" class="nav-btn" onclick="toggleSection('donor-database')">
-                    <span class="nav-left">
-                        <span class="nav-icon">🩸</span>
-                        <span class="nav-text">
-                            <span class="nav-label">Donor Database</span>
-                            <span class="nav-hint">Data input, tracking, statistics</span>
-                        </span>
-                    </span>
-                    <span class="nav-arrow">▼</span>
-                </button>
-                <div id="section-donor-database" class="submenu">
-                    <button id="btn-donor-db-entry" class="sub-btn blue" onclick="openModule('donor-database-entry.html','Donor Database - Data Input','')">Data Input</button>
-                    <button id="btn-donor-db-tracking" class="sub-btn blue" onclick="openModule('donor-database-tracking.html','Donor Database - Tracking','')">Tracking</button>
-                    <button id="btn-donor-db-stat" class="sub-btn green" onclick="openModule('donor-database-statistics.html','Donor Database - Statistics','')">Statistics</button>
-                </div>
-
-                <button id="nav-galloner" class="nav-btn" onclick="toggleSection('galloner')">
-                    <span class="nav-left">
-                        <span class="nav-icon">🧾</span>
-                        <span class="nav-text">
-                            <span class="nav-label">Galloner</span>
-                            <span class="nav-hint">Donor entry, tracking, awardees</span>
-                        </span>
-                    </span>
-                    <span class="nav-arrow">▼</span>
-                </button>
-                <div id="section-galloner" class="submenu">
-                    <button id="btn-donor-entry" class="sub-btn red" onclick="openModule('donor-entry.html','Donor Entry','')">Donor Entry</button>
-                    <button id="btn-tracking" class="sub-btn red" onclick="openModule('tracking.html','Tracking','')">Tracking</button>
-                    <button id="btn-awardees" class="sub-btn purple" onclick="openModule('awardees.html','Awardees','')">Awardees</button>
-                </div>
-
-                <button id="nav-partner" class="nav-btn" onclick="openSingleModule(this,'partner-organization.html','Partner Organization','')">
-                    <span class="nav-left">
-                        <span class="nav-icon">🏥</span>
-                        <span class="nav-text">
-                            <span class="nav-label">Partner Organization</span>
-                            <span class="nav-hint">External partner management</span>
-                        </span>
-                    </span>
-                </button>
-
-                <button id="nav-releasing" class="nav-btn" onclick="toggleSection('releasing')">
-                    <span class="nav-left">
-                        <span class="nav-icon">💉</span>
-                        <span class="nav-text">
-                            <span class="nav-label">Releasing</span>
-                            <span class="nav-hint">Blood issue, tracking, facility</span>
-                        </span>
-                    </span>
-                    <span class="nav-arrow">▼</span>
-                </button>
-                <div id="section-releasing" class="submenu">
-                    <button id="btn-releasing-main" class="sub-btn orange" onclick="openModule('releasing.html','Blood Releasing','')">Main</button>
-                    <button id="btn-releasing-entry" class="sub-btn orange" onclick="openModule('releasing-entry.html','Releasing Entry','')">Entry</button>
-                    <button id="btn-releasing-tracking" class="sub-btn orange" onclick="openModule('releasing-tracking.html','Releasing Tracking','')">Tracking</button>
-                    <button id="btn-releasing-stats" class="sub-btn green" onclick="openModule('releasing-statistics.html','Releasing Statistics','')">Statistics</button>
-                    <button id="btn-facility-manager" class="sub-btn blue" onclick="openModule('facility-manager.html','Facility Manager','')">Facility Manager</button>
-                </div>
-
-                <button id="nav-bulk-import" class="nav-btn" onclick="openSingleModule(this,'donor-import.html','Donor Database - Bulk Import','')">
-                    <span class="nav-left">
-                        <span class="nav-icon">📥</span>
-                        <span class="nav-text">
-                            <span class="nav-label">Bulk Import</span>
-                            <span class="nav-hint">Mass donor upload</span>
-                        </span>
-                    </span>
-                </button>
-
-                <button id="nav-donor-cleanup" class="nav-btn" onclick="openSingleModule(this,'donor-import-cleanup.html','Donor Database - Donor Cleanup','')">
-                    <span class="nav-left">
-                        <span class="nav-icon">🧹</span>
-                        <span class="nav-text">
-                            <span class="nav-label">Donor Cleanup</span>
-                            <span class="nav-hint">Import cleanup and correction</span>
-                        </span>
-                    </span>
-                </button>
-
-                <button id="nav-reports" class="nav-btn" onclick="openSingleModule(this,'reports.html','Reports','')">
-                    <span class="nav-left">
-                        <span class="nav-icon">📊</span>
-                        <span class="nav-text">
-                            <span class="nav-label">Reports</span>
-                            <span class="nav-hint">Summary and printable reports</span>
-                        </span>
-                    </span>
-                </button>
-
-                <button id="nav-admin" class="nav-btn" onclick="openSingleModule(this,'admin-manager.html','Admin Manager','')">
-                    <span class="nav-left">
-                        <span class="nav-icon">⚙️</span>
-                        <span class="nav-text">
-                            <span class="nav-label">Admin Manager</span>
-                            <span class="nav-hint">User and admin controls</span>
-                        </span>
-                    </span>
-                </button>
-
-                <button id="nav-backup" class="nav-btn" onclick="toggleSection('backup')">
-                    <span class="nav-left">
-                        <span class="nav-icon">🗂️</span>
-                        <span class="nav-text">
-                            <span class="nav-label">Backup Manager</span>
-                            <span class="nav-hint">Save, download, restore review</span>
-                        </span>
-                    </span>
-                    <span class="nav-arrow">▼</span>
-                </button>
-                <div id="section-backup" class="submenu">
-                    <button id="btn-backup-download" class="sub-btn green" onclick="downloadBackupFile()">Monthly Backup</button>
-                    <button id="btn-backup-save" class="sub-btn green" onclick="saveBackupToSystem()">Save Backup</button>
-                    <button id="btn-backup-viewer" class="sub-btn blue" onclick="openModule('backup-viewer.html','Backup Viewer','')">Backup Viewer</button>
-                </div>
-            </div>
-
-            <div class="logout-wrap">
-                <button class="logout-btn" onclick="logout()">Logout</button>
-            </div>
-        </aside>
-
-        <main class="workspace">
-            <div class="workspace-header">
-                <div>
-                    <div id="workspaceTitle" class="workspace-title"></div>
-                    <div id="workspaceSubtitle" class="workspace-subtitle"></div>
-                </div>
-                <div class="workspace-actions">
-                    <button class="action-btn" onclick="reloadFrame()">Reload</button>
-                </div>
-            </div>
-
-            <div class="iframe-wrap">
-                <div id="welcomePanel" class="welcome-panel">
-                    <div class="welcome-card">
-                        <div class="welcome-badge">● Blood Services Workspace</div>
-                        <img id="welcomeLogo" src="images/logo.png" class="welcome-logo" alt="PRC Logo">
-                        <div class="welcome-title">Philippine Red Cross</div>
-                        <div class="welcome-subtitle">Baguio City Chapter</div>
-
-                        <div class="welcome-grid">
-                            <div class="welcome-mini">
-                                <div class="welcome-mini-icon">🩸</div>
-                                <div class="welcome-mini-title">Donor Records</div>
-                                <div class="welcome-mini-sub">Fast access to donor input, tracking, and statistics.</div>
+                    <div class="field-group span-6">
+                        <div class="serial-main-box">
+                            <label for="serialNumber">1. Serial Number</label>
+                            <div class="serial-wrap">
+                                <span id="serialPrefix" class="serial-prefix">PRC2600-2600</span>
+                                <input type="text" id="serialNumber" placeholder="Enter manual number or scan barcode" required>
                             </div>
-                            <div class="welcome-mini">
-                                <div class="welcome-mini-icon">🧾</div>
-                                <div class="welcome-mini-title">Galloner</div>
-                                <div class="welcome-mini-sub">Manage donor entry, tracking, and awardees.</div>
+                            <div class="inline-toggle">
+                                <label><input type="checkbox" id="useSerialPrefix" checked> Enable prefix</label>
                             </div>
-                            <div class="welcome-mini">
-                                <div class="welcome-mini-icon">💉</div>
-                                <div class="welcome-mini-title">Releasing</div>
-                                <div class="welcome-mini-sub">Clean workflow for blood issue, monitoring, and facility use.</div>
-                            </div>
-                            <div class="welcome-mini">
-                                <div class="welcome-mini-icon">🗂️</div>
-                                <div class="welcome-mini-title">System Control</div>
-                                <div class="welcome-mini-sub">Manage imports, backups, and administration securely.</div>
+                            <div id="serialHelperBox" class="serial-helper">
+                                Prefix enabled. Saved serial will be prefix + your manual input or scanned value.
                             </div>
                         </div>
                     </div>
+
+                    <div class="field-group span-6">
+                        <label>2. Donor Type</label>
+                        <div class="radio-box">
+                            <div class="radio-options">
+                                <label><input type="radio" name="donorType" value="Patient Directed"> Patient Directed</label>
+                                <label><input type="radio" name="donorType" value="Walk-in"> Walk-in</label>
+                                <label><input type="radio" name="donorType" value="MBD"> MBD</label>
+                            </div>
+
+                            <div id="patientDirectedBox" class="hidden">
+                                <input type="text" id="patientDirectedDetails" placeholder="Enter patient directed details">
+                            </div>
+
+                            <div id="walkInBox" class="hidden" style="margin-top:10px;">
+                                <div class="field-row">
+                                    <input type="number" id="walkInCount" min="1" placeholder="Number of walk-in donors">
+                                    <button type="button" id="startWalkInGroupBtn" class="main-btn blue-btn">Start Walk-in Group</button>
+                                </div>
+                            </div>
+
+                            <div id="mbdBox" class="hidden" style="margin-top:10px;">
+                                <div class="field-row">
+                                    <input type="text" id="mbdDetails" placeholder="Enter MBD site / organization">
+                                    <input type="number" id="mbdCount" min="1" placeholder="Number of MBD donors">
+                                </div>
+                                <div style="margin-top:10px;">
+                                    <button type="button" id="startMbdGroupBtn" class="main-btn blue-btn">Start MBD Group</button>
+                                </div>
+                            </div>
+
+                            <div id="groupInfoBox" class="group-info hidden"></div>
+                        </div>
+                    </div>
+
+                    <div class="field-group span-12">
+                        <button type="button" id="serialRangeToggleBtn" class="collapse-btn" aria-expanded="false">
+                            <span>Serial Range Helper</span>
+                            <span class="chevron">▼</span>
+                        </button>
+                        <div id="serialRangeCollapse" class="collapse-content hidden">
+                            <div class="serial-tools-box">
+                                <div class="helper-text">
+                                    Bulk entry helper. Enter only the numeric ending. Example: start <b>4152</b>, end <b>4160</b>, skip <b>4155,4158</b>
+                                </div>
+
+                                <div class="serial-batch-grid">
+                                    <div class="field-group span-3">
+                                        <label for="serialRangeStart">Start Number</label>
+                                        <input type="text" id="serialRangeStart" placeholder="4152">
+                                    </div>
+
+                                    <div class="field-group span-3">
+                                        <label for="serialRangeEnd">End Number</label>
+                                        <input type="text" id="serialRangeEnd" placeholder="4160">
+                                    </div>
+
+                                    <div class="field-group span-4">
+                                        <label for="serialRangeSkip">Skipped Numbers</label>
+                                        <input type="text" id="serialRangeSkip" placeholder="4155,4158">
+                                    </div>
+
+                                    <div class="field-group span-2">
+                                        <label>&nbsp;</label>
+                                        <button type="button" id="generateSerialRangeBtn" class="main-btn orange-btn">Generate</button>
+                                    </div>
+                                </div>
+
+                                <div class="range-type-box">
+                                    <label style="font-weight:bold; font-size:13px; color:#7f1d1d;">Range Donor Type</label>
+                                    <div class="range-type-options">
+                                        <label><input type="radio" name="rangeDonorType" value="Walk-in"> Walk-in</label>
+                                        <label><input type="radio" name="rangeDonorType" value="MBD"> MBD</label>
+                                        <label><input type="radio" name="rangeDonorType" value="Patient Directed"> Patient Directed</label>
+                                    </div>
+
+                                    <div id="rangeMbdBox" class="hidden" style="margin-top:10px;">
+                                        <input type="text" id="rangeMbdDetails" placeholder="Range MBD site / organization">
+                                    </div>
+
+                                    <div id="rangePatientBox" class="hidden" style="margin-top:10px;">
+                                        <input type="text" id="rangePatientDetails" placeholder="Range patient directed details">
+                                    </div>
+
+                                    <div id="rangeTypeInfo" class="range-type-info hidden"></div>
+                                </div>
+
+                                <div id="serialBatchInfo" class="serial-batch-info hidden"></div>
+                                <div id="serialBatchPreview" class="preview-box hidden"></div>
+
+                                <div class="serial-btn-row">
+                                    <button type="button" id="nextSerialBtn" class="main-btn blue-btn">Load Next Serial</button>
+                                    <button type="button" id="clearSerialBatchBtn" class="main-btn gray-btn">Clear Serial List</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="field-group span-2">
+                        <label for="suffix">3. Suffix</label>
+                        <input type="text" id="suffix" placeholder="Jr., Sr., III">
+                    </div>
+
+                    <div class="field-group span-3">
+                        <label for="surname">4. Surname</label>
+                        <input type="text" id="surname" required>
+                    </div>
+
+                    <div class="field-group span-4">
+                        <label for="firstName">5. First Name</label>
+                        <input type="text" id="firstName" required>
+                    </div>
+
+                    <div class="field-group span-3">
+                        <label for="middleName">6. Middle Name</label>
+                        <input type="text" id="middleName">
+                    </div>
+
+                    <div class="field-group span-4">
+                        <label for="birthday">7. Birthday</label>
+                        <input type="date" id="birthday" required>
+                    </div>
+
+                    <div class="field-group span-2">
+                        <label for="age">8. Age</label>
+                        <input type="number" id="age" placeholder="Age" readonly class="readonly-fill">
+                    </div>
+
+                    <div class="field-group span-3">
+                        <label for="civilStatus">9. Civil Status</label>
+                        <select id="civilStatus" required>
+                            <option value="">Select</option>
+                            <option value="Single">Single</option>
+                            <option value="Married">Married</option>
+                            <option value="Separated">Separated</option>
+                            <option value="Divorced">Divorced</option>
+                            <option value="Widowed">Widowed</option>
+                        </select>
+                    </div>
+
+                    <div class="field-group span-3">
+                        <label for="sex">10. Sex</label>
+                        <select id="sex" required>
+                            <option value="">Select</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                    </div>
+
+                    <div class="field-group span-8">
+                        <label for="address">11. Address</label>
+                        <input type="text" id="address" required>
+                    </div>
+
+                    <div class="field-group span-4">
+                        <label for="cityProvince">12. Province / City</label>
+                        <input type="text" id="cityProvince" required>
+                    </div>
+
+                    <div class="field-group span-6">
+                        <label for="occupation">13. Occupation</label>
+                        <input type="text" id="occupation">
+                    </div>
+
+                    <div class="field-group span-6">
+                        <label for="contactNumber">14. Contact Number</label>
+                        <input type="text" id="contactNumber" inputmode="numeric">
+                    </div>
+
+                    <div class="field-group span-6">
+                        <label for="donorCategory">15. Type of Donor</label>
+                        <select id="donorCategory">
+                            <option value="Auto">Auto</option>
+                            <option value="New">New</option>
+                            <option value="Repeat">Repeat</option>
+                            <option value="Lapse">Lapse</option>
+                        </select>
+                        <div class="helper-text">
+                            Auto will only apply logic if enough donor history is available.
+                        </div>
+                    </div>
+
+                    <div class="field-group span-6">
+                        <label for="numberOfDonations">16. Number of Donations</label>
+                        <input type="number" id="numberOfDonations" min="0" value="0">
+                        <div class="helper-text">
+                            This is manual. Loading an existing donor will not automatically add +1.
+                        </div>
+                    </div>
+
+                    <div class="field-group span-12">
+                        <div id="typeHelperBox" class="type-helper hidden"></div>
+                    </div>
+
+                    <div class="field-group span-3">
+                        <label for="bloodType">17. Blood Type</label>
+                        <select id="bloodType" required>
+                            <option value="">Select</option>
+                            <option value="A+">A+</option>
+                            <option value="A-">A-</option>
+                            <option value="B+">B+</option>
+                            <option value="B-">B-</option>
+                            <option value="AB+">AB+</option>
+                            <option value="AB-">AB-</option>
+                            <option value="O+">O+</option>
+                            <option value="O-">O-</option>
+                            <option value="Unknown">Unknown</option>
+                        </select>
+                    </div>
+
+                    <div class="field-group span-3">
+                        <label for="bloodBagBrand">18. Blood Bag Used</label>
+                        <select id="bloodBagBrand" required>
+                            <option value="">Select</option>
+                            <option value="KARMI">KARMI</option>
+                            <option value="TERUMO">TERUMO</option>
+                        </select>
+                    </div>
+
+                    <div class="field-group span-3">
+                        <label for="bloodBagType">19. Blood Bag Type</label>
+                        <select id="bloodBagType" required>
+                            <option value="">Select</option>
+                            <option value="Single">Single</option>
+                            <option value="Double">Double</option>
+                            <option value="Triple">Triple</option>
+                            <option value="Quadruple">Quadruple</option>
+                        </select>
+                    </div>
+
+                    <div class="field-group span-3">
+                        <label for="amount">20. Amount</label>
+                        <select id="amount" required>
+                            <option value="">Select</option>
+                            <option value="450 ml">450 ml</option>
+                            <option value="QNS">QNS</option>
+                            <option value="UB">UB</option>
+                        </select>
+                    </div>
+
+                    <div class="field-group span-6">
+                        <label for="timeStarted">21. Time Started</label>
+                        <input type="text" id="timeStarted" inputmode="numeric" placeholder="HHMM (e.g. 930 or 1930)">
+                    </div>
+
+                    <div class="field-group span-6">
+                        <label for="timeEnded">22. Time Ended</label>
+                        <input type="text" id="timeEnded" inputmode="numeric" placeholder="HHMM (e.g. 930 or 1930)">
+                    </div>
+
+                    <div class="field-group span-12">
+                        <div class="helper-text">Use 24-hour format only (00:00). No AM/PM.</div>
+                        <div id="timeHelperBox" class="time-helper hidden"></div>
+                    </div>
+
+                    <div class="field-group span-12">
+                        <label for="remarks">23. Remarks</label>
+                        <textarea id="remarks"></textarea>
+                    </div>
                 </div>
 
-                <iframe id="moduleFrame" class="module-frame hidden-view" src=""></iframe>
-            </div>
-        </main>
+                <div class="btn-row">
+                    <button type="submit" id="saveDonorBtn" class="main-btn green-btn">Save Donor Entry</button>
+                    <button type="reset" id="resetFormBtn" class="main-btn gray-btn">Clear Form</button>
+                    <button type="button" id="clearLoadedDonorBtn" class="main-btn blue-btn">Clear Loaded Donor</button>
+                    <button type="button" id="endGroupBtn" class="main-btn red-btn">End Active Group</button>
+                </div>
 
+                <div id="statusMessage" class="status-message"></div>
+            </form>
+        </div>
     </div>
 </div>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
+<script>
     const firebaseConfig = {
         apiKey: "AIzaSyDk_ZKjamILmKJZh0HvVcpPCtFR29uvfNs",
         authDomain: "prc-baguio-bss.firebaseapp.com",
@@ -833,411 +899,1157 @@
         appId: "1:867086763087:web:c1f09d9a1bce6c4799563a"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getDatabase(app);
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
 
-    const sections = ["donor-database", "galloner", "releasing", "backup"];
-    const frame = document.getElementById("moduleFrame");
-    const welcomePanel = document.getElementById("welcomePanel");
-    const workspaceTitle = document.getElementById("workspaceTitle");
-    const workspaceSubtitle = document.getElementById("workspaceSubtitle");
-    const topbarRoleText = document.getElementById("topbarRoleText");
+    const auth = firebase.auth();
+    const rtdb = firebase.database();
 
-    let currentUserRole = "admin";
+    const donorForm = document.getElementById("donorForm");
+    const entryDate = document.getElementById("entryDate");
+    const birthday = document.getElementById("birthday");
+    const age = document.getElementById("age");
+    const donorCategory = document.getElementById("donorCategory");
+    const numberOfDonations = document.getElementById("numberOfDonations");
+    const typeHelperBox = document.getElementById("typeHelperBox");
+    const statusMessage = document.getElementById("statusMessage");
+    const authIndicator = document.getElementById("authIndicator");
+    const saveDonorBtn = document.getElementById("saveDonorBtn");
+    const reloadPageBtn = document.getElementById("reloadPageBtn");
+    const resetFormBtn = document.getElementById("resetFormBtn");
 
-    function setLogoFallback() {
-        const logos = [
-            document.getElementById("topLogo"),
-            document.getElementById("welcomeLogo")
-        ];
+    const donorTypeRadios = document.querySelectorAll('input[name="donorType"]');
+    const patientDirectedBox = document.getElementById("patientDirectedBox");
+    const patientDirectedDetails = document.getElementById("patientDirectedDetails");
+    const walkInBox = document.getElementById("walkInBox");
+    const walkInCount = document.getElementById("walkInCount");
+    const startWalkInGroupBtn = document.getElementById("startWalkInGroupBtn");
+    const mbdBox = document.getElementById("mbdBox");
+    const mbdDetails = document.getElementById("mbdDetails");
+    const mbdCount = document.getElementById("mbdCount");
+    const startMbdGroupBtn = document.getElementById("startMbdGroupBtn");
+    const groupInfoBox = document.getElementById("groupInfoBox");
+    const endGroupBtn = document.getElementById("endGroupBtn");
 
-        logos.forEach(img => {
-            img.onerror = function () {
-                this.style.display = "none";
+    const lookupSearch = document.getElementById("lookupSearch");
+    const lookupResultsBox = document.getElementById("lookupResultsBox");
+    const lookupResultsBody = document.getElementById("lookupResultsBody");
+    const loadedDonorInfo = document.getElementById("loadedDonorInfo");
+    const clearLoadedDonorBtn = document.getElementById("clearLoadedDonorBtn");
+
+    const serialPrefix = document.getElementById("serialPrefix");
+    const serialNumberInput = document.getElementById("serialNumber");
+    const useSerialPrefix = document.getElementById("useSerialPrefix");
+    const serialHelperBox = document.getElementById("serialHelperBox");
+
+    const serialRangeStart = document.getElementById("serialRangeStart");
+    const serialRangeEnd = document.getElementById("serialRangeEnd");
+    const serialRangeSkip = document.getElementById("serialRangeSkip");
+    const generateSerialRangeBtn = document.getElementById("generateSerialRangeBtn");
+    const nextSerialBtn = document.getElementById("nextSerialBtn");
+    const clearSerialBatchBtn = document.getElementById("clearSerialBatchBtn");
+    const serialRangeToggleBtn = document.getElementById("serialRangeToggleBtn");
+    const serialRangeCollapse = document.getElementById("serialRangeCollapse");
+    const serialBatchInfo = document.getElementById("serialBatchInfo");
+    const serialBatchPreview = document.getElementById("serialBatchPreview");
+
+    const rangeDonorTypeRadios = document.querySelectorAll('input[name="rangeDonorType"]');
+    const rangeMbdBox = document.getElementById("rangeMbdBox");
+    const rangeMbdDetails = document.getElementById("rangeMbdDetails");
+    const rangePatientBox = document.getElementById("rangePatientBox");
+    const rangePatientDetails = document.getElementById("rangePatientDetails");
+    const rangeTypeInfo = document.getElementById("rangeTypeInfo");
+
+    const timeStartedInput = document.getElementById("timeStarted");
+    const timeEndedInput = document.getElementById("timeEnded");
+    const timeHelperBox = document.getElementById("timeHelperBox");
+
+    const ACTIVE_GROUP_STORAGE_KEY = "prcDonorEntryActiveGroup";
+    const SERIAL_BATCH_STORAGE_KEY = "prcDonorEntrySerialBatch";
+
+    let currentUser = null;
+    let loadedDonorRecord = null;
+    let donorLookupResults = [];
+    let allDonorRecords = [];
+    let autoTypeSuggestion = "";
+    let autoTypeReason = "";
+    let isSaving = false;
+    let donorSearchDebounce = null;
+
+    function setTodayDate() {
+        entryDate.value = new Date().toISOString().split("T")[0];
+        updateSerialPrefixByDate();
+    }
+
+    function showMessage(message, type) {
+        statusMessage.textContent = message;
+        statusMessage.className = "status-message";
+        statusMessage.classList.add(type === "success" ? "status-success" : "status-error");
+    }
+
+    function clearMessage() {
+        statusMessage.textContent = "";
+        statusMessage.className = "status-message";
+    }
+
+    function setAuthIndicator(text, ok) {
+        authIndicator.textContent = text;
+        authIndicator.style.background = ok ? "rgba(30,95,35,0.35)" : "rgba(255,255,255,0.15)";
+        authIndicator.style.borderColor = ok ? "rgba(183,223,185,0.75)" : "rgba(255,255,255,0.28)";
+        authIndicator.style.color = "#fff";
+    }
+
+    function setSavingState(saving) {
+        isSaving = saving;
+        saveDonorBtn.disabled = saving;
+        saveDonorBtn.textContent = saving ? "Saving..." : "Save Donor Entry";
+    }
+
+    function escapeHtml(text) {
+        if (text === null || text === undefined) return "";
+        return String(text)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function normalizeText(value) {
+        return String(value || "").trim().toLowerCase();
+    }
+
+    function normalizeAlpha(value) {
+        return String(value || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    }
+
+    function getStrongIdentityKey(record) {
+        return [
+            normalizeAlpha(record.surname),
+            normalizeAlpha(record.firstName),
+            String(record.birthday || "").trim()
+        ].join("|");
+    }
+
+    function computeAge() {
+        if (!birthday.value) {
+            age.value = "";
+            return;
+        }
+
+        const birthDate = new Date(birthday.value);
+        const today = new Date();
+        let years = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            years--;
+        }
+
+        age.value = years >= 0 ? years : "";
+    }
+
+    function calculateAutoDonorCategory(lastEntryDate) {
+        if (!lastEntryDate || !entryDate.value) {
+            return {
+                value: "New",
+                reason: "No previous donation date found, so Auto defaults to New."
             };
-        });
-    }
-
-    setLogoFallback();
-
-    onAuthStateChanged(auth, async (user) => {
-        if (!user) {
-            window.location.href = "index.html";
-            return;
         }
 
-        try {
-            const roleSnapshot = await get(ref(db, "userRoles/" + user.uid + "/role"));
+        const newDate = new Date(entryDate.value + "T00:00:00");
+        const lastDate = new Date(lastEntryDate + "T00:00:00");
 
-            if (roleSnapshot.exists()) {
-                currentUserRole = roleSnapshot.val();
-            } else {
-                currentUserRole = "admin";
-            }
-
-            applyRoleAccess(currentUserRole);
-            showWelcomeHome();
-        } catch (error) {
-            console.error("Role loading error:", error);
-            alert("Role loading error: " + error.message);
-
-            currentUserRole = "admin";
-            applyRoleAccess(currentUserRole);
-            showWelcomeHome();
-        }
-    });
-
-    function clearActiveSubs() {
-        document.querySelectorAll(".sub-btn").forEach(btn => {
-            btn.classList.remove("active-sub");
-        });
-    }
-
-    function clearActiveNavs() {
-        document.querySelectorAll(".nav-btn").forEach(btn => {
-            btn.classList.remove("active");
-        });
-    }
-
-    function buildFreshUrl(url) {
-        return url + (url.includes("?") ? "&" : "?") + "t=" + Date.now();
-    }
-
-    function hideElement(id) {
-        const el = document.getElementById(id);
-        if (el) el.classList.add("hidden-role");
-    }
-
-    function showElement(id) {
-        const el = document.getElementById(id);
-        if (el) el.classList.remove("hidden-role");
-    }
-
-    function closeSection(name) {
-        const section = document.getElementById("section-" + name);
-        const nav = document.getElementById("nav-" + name);
-        if (section) section.classList.remove("open");
-        if (nav) nav.classList.remove("active");
-    }
-
-    function closeAllSections() {
-        sections.forEach(sectionName => {
-            const section = document.getElementById("section-" + sectionName);
-            const nav = document.getElementById("nav-" + sectionName);
-            if (section) section.classList.remove("open");
-            if (nav) nav.classList.remove("active");
-        });
-    }
-
-    function showWelcomeHome() {
-        clearActiveSubs();
-        clearActiveNavs();
-        closeAllSections();
-        frame.classList.add("hidden-view");
-        welcomePanel.classList.remove("hidden-view");
-        workspaceTitle.textContent = "";
-        workspaceSubtitle.textContent = "";
-        frame.src = "";
-    }
-
-    window.goDashboardHome = function() {
-        showWelcomeHome();
-    };
-
-    function showModuleFrame() {
-        welcomePanel.classList.add("hidden-view");
-        frame.classList.remove("hidden-view");
-    }
-
-    function applyRoleAccess(role) {
-        showElement("nav-donor-database");
-        showElement("section-donor-database");
-        showElement("nav-galloner");
-        showElement("section-galloner");
-        showElement("nav-partner");
-        showElement("nav-releasing");
-        showElement("section-releasing");
-        showElement("nav-bulk-import");
-        showElement("nav-donor-cleanup");
-        showElement("nav-reports");
-        showElement("nav-admin");
-        showElement("nav-backup");
-        showElement("section-backup");
-        showElement("btn-donor-db-entry");
-        showElement("btn-donor-db-tracking");
-        showElement("btn-donor-db-stat");
-        showElement("btn-donor-entry");
-        showElement("btn-tracking");
-        showElement("btn-awardees");
-        showElement("btn-releasing-main");
-        showElement("btn-releasing-entry");
-        showElement("btn-releasing-tracking");
-        showElement("btn-releasing-stats");
-        showElement("btn-facility-manager");
-        showElement("btn-backup-download");
-        showElement("btn-backup-save");
-        showElement("btn-backup-viewer");
-
-        if (role === "limitedEncoder") {
-            topbarRoleText.textContent = "Limited Encoder Access";
-
-            hideElement("btn-donor-db-stat");
-            hideElement("nav-partner");
-            hideElement("nav-releasing");
-            hideElement("section-releasing");
-            hideElement("nav-bulk-import");
-            hideElement("nav-donor-cleanup");
-            hideElement("nav-reports");
-            hideElement("nav-admin");
-            hideElement("nav-backup");
-            hideElement("section-backup");
-
-            closeSection("releasing");
-            closeSection("backup");
-        } else if (role === "viewer") {
-            topbarRoleText.textContent = "Viewer Access";
-
-            hideElement("btn-donor-db-entry");
-            hideElement("btn-donor-entry");
-            hideElement("btn-releasing-entry");
-            hideElement("nav-bulk-import");
-            hideElement("nav-donor-cleanup");
-            hideElement("nav-admin");
-            hideElement("nav-backup");
-            hideElement("section-backup");
-        } else {
-            topbarRoleText.textContent = "Blood Services Panel";
-        }
-    }
-
-    window.toggleSection = function(name) {
-        if (currentUserRole === "limitedEncoder" && !["donor-database", "galloner"].includes(name)) {
-            return;
+        if (isNaN(newDate) || isNaN(lastDate)) {
+            return {
+                value: "New",
+                reason: "Date comparison is incomplete, so Auto defaults to New."
+            };
         }
 
-        const clickedSection = document.getElementById("section-" + name);
-        const clickedNav = document.getElementById("nav-" + name);
+        const diffMs = newDate - lastDate;
+        const diffDays = diffMs / (1000 * 60 * 60 * 24);
 
-        if (!clickedSection || !clickedNav) return;
-
-        const willOpen = !clickedSection.classList.contains("open");
-
-        closeAllSections();
-
-        if (willOpen) {
-            clickedSection.classList.add("open");
-            clickedNav.classList.add("active");
-        }
-    };
-
-    window.openModule = function(url, title, subtitle) {
-        if (currentUserRole === "limitedEncoder") {
-            const allowedModules = [
-                "donor-database-entry.html",
-                "donor-database-tracking.html",
-                "donor-entry.html",
-                "tracking.html",
-                "awardees.html"
-            ];
-
-            if (!allowedModules.includes(url)) {
-                alert("You do not have access to this module.");
-                return;
-            }
+        if (diffDays < 0) {
+            return {
+                value: "New",
+                reason: "Entry date is earlier than last donation date, so Auto is not reliable."
+            };
         }
 
-        if (currentUserRole === "viewer") {
-            const blockedViewerModules = [
-                "donor-database-entry.html",
-                "donor-entry.html",
-                "releasing-entry.html",
-                "admin-manager.html",
-                "donor-import.html",
-                "donor-import-cleanup.html",
-                "backup-viewer.html"
-            ];
-
-            if (blockedViewerModules.includes(url)) {
-                alert("You do not have access to this module.");
-                return;
-            }
+        if (diffDays <= 365) {
+            return {
+                value: "Repeat",
+                reason: `Previous donation is ${Math.floor(diffDays)} day(s) before this entry date.`
+            };
         }
-
-        showModuleFrame();
-        frame.src = buildFreshUrl(url);
-        workspaceTitle.textContent = title;
-        workspaceSubtitle.textContent = subtitle || "";
-        clearActiveSubs();
-
-        const matchingButton = Array.from(document.querySelectorAll(".sub-btn")).find(btn => {
-            const onclickValue = btn.getAttribute("onclick") || "";
-            return onclickValue.includes("'" + url + "'");
-        });
-
-        if (matchingButton) {
-            matchingButton.classList.add("active-sub");
-        }
-    };
-
-    window.openSingleModule = function(navButton, url, title, subtitle) {
-        if (currentUserRole === "limitedEncoder") {
-            const allowedSingleModules = [];
-            if (!allowedSingleModules.includes(url)) {
-                alert("You do not have access to this module.");
-                return;
-            }
-        }
-
-        if (currentUserRole === "viewer") {
-            const blockedViewerSingle = [
-                "admin-manager.html",
-                "donor-import.html",
-                "donor-import-cleanup.html",
-                "backup-viewer.html"
-            ];
-
-            if (blockedViewerSingle.includes(url)) {
-                alert("You do not have access to this module.");
-                return;
-            }
-        }
-
-        clearActiveNavs();
-        navButton.classList.add("active");
-        clearActiveSubs();
-        closeAllSections();
-        navButton.classList.add("active");
-        showModuleFrame();
-        frame.src = buildFreshUrl(url);
-        workspaceTitle.textContent = title;
-        workspaceSubtitle.textContent = subtitle || "";
-    };
-
-    window.reloadFrame = function() {
-        if (frame.classList.contains("hidden-view")) return;
-        const currentRaw = frame.getAttribute("src") || frame.src || "";
-        if (!currentRaw) return;
-        const cleanCurrent = currentRaw.split("?")[0];
-        frame.src = buildFreshUrl(cleanCurrent);
-    };
-
-    async function getRealtimeDatabaseBackup() {
-        const paths = [
-            "admins",
-            "userRoles",
-            "donorDatabase",
-            "galloner",
-            "partnerOrganizations",
-            "releasing",
-            "facilities",
-            "settings",
-            "activityLogs"
-        ];
-
-        const backup = {};
-
-        for (const path of paths) {
-            const snapshot = await get(ref(db, path));
-            backup[path] = snapshot.exists() ? snapshot.val() : {};
-        }
-
-        return backup;
-    }
-
-    async function buildBackupData() {
-        const realtimeData = await getRealtimeDatabaseBackup();
 
         return {
-            metadata: {
-                project: "prc-baguio-bss",
-                exportedAt: new Date().toISOString(),
-                exportedBy: auth.currentUser?.email || "",
-                type: "monthly-backup",
-                database: "realtime-database-only"
-            },
-            realtimeDatabase: realtimeData
+            value: "Lapse",
+            reason: `Previous donation is ${Math.floor(diffDays)} day(s) before this entry date.`
         };
     }
 
-    window.downloadBackupFile = async function() {
-        if (currentUserRole === "limitedEncoder" || currentUserRole === "viewer") {
-            alert("You do not have access to backup functions.");
+    function refreshTypeHelper() {
+        if (donorCategory.value === "Auto") {
+            typeHelperBox.textContent = `Auto result: ${autoTypeSuggestion || "New"}. ${autoTypeReason || ""}`;
+        } else {
+            typeHelperBox.textContent = `Manual override selected: ${donorCategory.value}.`;
+        }
+        typeHelperBox.classList.remove("hidden");
+    }
+
+    function updateAutoTypeSuggestion() {
+        if (!loadedDonorRecord) {
+            autoTypeSuggestion = "New";
+            autoTypeReason = "No loaded donor history, so Auto defaults to New.";
+            refreshTypeHelper();
             return;
         }
 
-        try {
-            if (!auth.currentUser) {
-                alert("You are not logged in.");
-                window.location.href = "index.html";
-                return;
-            }
+        const result = calculateAutoDonorCategory(loadedDonorRecord.entryDate);
+        autoTypeSuggestion = result.value;
+        autoTypeReason = result.reason;
+        refreshTypeHelper();
+    }
 
-            const now = new Date();
-            const month = String(now.getMonth() + 1).padStart(2, "0");
-            const day = String(now.getDate()).padStart(2, "0");
+    function getFinalDonorCategoryToSave() {
+        if (donorCategory.value !== "Auto") return donorCategory.value;
+        return autoTypeSuggestion || "New";
+    }
 
-            const backupData = await buildBackupData();
+    function getSelectedDonorType() {
+        const selected = document.querySelector('input[name="donorType"]:checked');
+        return selected ? selected.value : "";
+    }
 
-            const fileName = `prc-baguio-bss-backup-${now.getFullYear()}-${month}-${day}.json`;
-            const json = JSON.stringify(backupData, null, 2);
-            const blob = new Blob([json], { type: "application/json" });
+    function setSelectedDonorType(value) {
+        donorTypeRadios.forEach(radio => {
+            radio.checked = radio.value === value;
+        });
+        updateDonorTypeFields();
+    }
 
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = fileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+    function updateDonorTypeFields() {
+        const selected = getSelectedDonorType();
+        patientDirectedBox.classList.add("hidden");
+        walkInBox.classList.add("hidden");
+        mbdBox.classList.add("hidden");
 
-            alert("Backup file downloaded successfully.");
-        } catch (error) {
-            console.error("Download backup error:", error);
-            alert("Backup file download failed.");
+        if (selected === "Patient Directed") patientDirectedBox.classList.remove("hidden");
+        if (selected === "Walk-in") walkInBox.classList.remove("hidden");
+        if (selected === "MBD") mbdBox.classList.remove("hidden");
+    }
+
+    function getSelectedRangeDonorType() {
+        const selected = document.querySelector('input[name="rangeDonorType"]:checked');
+        return selected ? selected.value : "";
+    }
+
+    function updateRangeDonorTypeFields() {
+        const selected = getSelectedRangeDonorType();
+        rangeMbdBox.classList.add("hidden");
+        rangePatientBox.classList.add("hidden");
+
+        if (selected === "MBD") rangeMbdBox.classList.remove("hidden");
+        if (selected === "Patient Directed") rangePatientBox.classList.remove("hidden");
+
+        if (selected) {
+            let text = `Serial range donor type set to: ${selected}`;
+            if (selected === "MBD" && rangeMbdDetails.value.trim()) text += ` | ${rangeMbdDetails.value.trim()}`;
+            if (selected === "Patient Directed" && rangePatientDetails.value.trim()) text += ` | ${rangePatientDetails.value.trim()}`;
+            rangeTypeInfo.textContent = text;
+            rangeTypeInfo.classList.remove("hidden");
+        } else {
+            rangeTypeInfo.textContent = "";
+            rangeTypeInfo.classList.add("hidden");
         }
-    };
+    }
 
-    window.saveBackupToSystem = async function() {
-        if (currentUserRole === "limitedEncoder" || currentUserRole === "viewer") {
-            alert("You do not have access to backup functions.");
+    function getSerialPrefixFromYear(year) {
+        const yearText = String(year || "");
+        const twoDigitYear = yearText.slice(-2) || "26";
+        return `PRC2600-${twoDigitYear}00`;
+    }
+
+    function getSelectedEntryYear() {
+        if (entryDate.value) return Number(entryDate.value.split("-")[0]);
+        return new Date().getFullYear();
+    }
+
+    function updateSerialPrefixByDate() {
+        serialPrefix.textContent = getSerialPrefixFromYear(getSelectedEntryYear());
+        updateSerialModeUI();
+        renderSerialBatchInfo();
+    }
+
+    function updateSerialModeUI() {
+        const enabled = useSerialPrefix.checked;
+        const currentPrefix = serialPrefix.textContent.trim();
+
+        serialPrefix.style.display = enabled ? "flex" : "none";
+        serialHelperBox.textContent = enabled
+            ? `Prefix enabled. Saved serial will be ${currentPrefix} + your manual input or scanned value.`
+            : "Prefix disabled. Saved serial will be exactly what you type or scan.";
+    }
+
+    function getFinalSerialNumber() {
+        const raw = serialNumberInput.value.trim();
+        const currentPrefix = serialPrefix.textContent.trim();
+
+        if (!raw) return "";
+        if (!useSerialPrefix.checked) return raw;
+        if (raw.toUpperCase().startsWith(currentPrefix.toUpperCase())) return raw;
+        return currentPrefix + raw;
+    }
+
+    function stripPrefixFromPossibleFullSerial(value) {
+        let cleaned = String(value || "").trim();
+        if (!cleaned) return "";
+        cleaned = cleaned.replace(/\s+/g, "");
+        cleaned = cleaned.replace(/^PRC2600-\d{4}/i, "");
+        cleaned = cleaned.replace(/^PRC2600-/i, "");
+        cleaned = cleaned.replace(/[^0-9]/g, "");
+        return cleaned;
+    }
+
+    function parseSkipList(skipText) {
+        return Array.from(new Set(
+            String(skipText || "")
+                .split(",")
+                .map(item => stripPrefixFromPossibleFullSerial(item))
+                .filter(Boolean)
+        ));
+    }
+
+    function buildSerialListFromRange(startRaw, endRaw, skipText) {
+        const startStr = stripPrefixFromPossibleFullSerial(startRaw);
+        const endStr = stripPrefixFromPossibleFullSerial(endRaw);
+
+        if (!startStr || !endStr) {
+            throw new Error("Please enter both start and end serial numbers.");
+        }
+
+        const startNum = Number(startStr);
+        const endNum = Number(endStr);
+
+        if (Number.isNaN(startNum) || Number.isNaN(endNum)) {
+            throw new Error("Start and end serial numbers must be numeric.");
+        }
+
+        if (endNum < startNum) {
+            throw new Error("End serial number must be greater than or equal to start serial number.");
+        }
+
+        const width = Math.max(startStr.length, endStr.length);
+        const skipSet = new Set(parseSkipList(skipText));
+        const list = [];
+
+        for (let num = startNum; num <= endNum; num++) {
+            const padded = String(num).padStart(width, "0");
+            if (!skipSet.has(padded) && !skipSet.has(String(num))) list.push(padded);
+        }
+
+        if (!list.length) {
+            throw new Error("No serial numbers left after applying skipped numbers.");
+        }
+
+        return list;
+    }
+
+    function getLocalActiveGroup() {
+        try {
+            const raw = localStorage.getItem(ACTIVE_GROUP_STORAGE_KEY);
+            return raw ? JSON.parse(raw) : null;
+        } catch {
+            return null;
+        }
+    }
+
+    function setLocalActiveGroup(data) {
+        localStorage.setItem(ACTIVE_GROUP_STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function clearLocalActiveGroup() {
+        localStorage.removeItem(ACTIVE_GROUP_STORAGE_KEY);
+    }
+
+    function getActiveGroup() {
+        return getLocalActiveGroup();
+    }
+
+    function setActiveGroup(data) {
+        setLocalActiveGroup(data);
+    }
+
+    function clearActiveGroup() {
+        clearLocalActiveGroup();
+    }
+
+    function renderActiveGroup() {
+        const activeGroup = getActiveGroup();
+
+        if (!activeGroup || !activeGroup.remaining || activeGroup.remaining <= 0) {
+            groupInfoBox.classList.add("hidden");
+            groupInfoBox.textContent = "";
             return;
         }
 
-        try {
-            if (!auth.currentUser) {
-                alert("You are not logged in.");
-                window.location.href = "index.html";
+        const originalCount = Number(activeGroup.originalCount || activeGroup.remaining || 0);
+        const remaining = Number(activeGroup.remaining || 0);
+        const currentNumber = Math.max(1, originalCount - remaining + 1);
+        const progressText = originalCount > 0
+            ? `Current donor in group: ${currentNumber} of ${originalCount} | Remaining donors after this entry: ${remaining}`
+            : `Remaining donors: ${remaining}`;
+
+        if (activeGroup.entryDate !== entryDate.value) {
+            groupInfoBox.textContent = `Saved active group found for ${activeGroup.entryDate}. ${progressText}`;
+            groupInfoBox.classList.remove("hidden");
+            return;
+        }
+
+        if (activeGroup.donorType === "Walk-in") {
+            groupInfoBox.textContent = `Active Group: Walk-in | Date: ${activeGroup.entryDate} | ${progressText}`;
+            setSelectedDonorType("Walk-in");
+        } else if (activeGroup.donorType === "MBD") {
+            groupInfoBox.textContent = `Active Group: MBD - ${activeGroup.organization || ""} | Date: ${activeGroup.entryDate} | ${progressText}`;
+            setSelectedDonorType("MBD");
+            mbdDetails.value = activeGroup.organization || "";
+        } else if (activeGroup.donorType === "Patient Directed") {
+            groupInfoBox.textContent = `Active Group: Patient Directed - ${activeGroup.details || ""} | Date: ${activeGroup.entryDate} | ${progressText}`;
+            setSelectedDonorType("Patient Directed");
+            patientDirectedDetails.value = activeGroup.details || "";
+        }
+
+        groupInfoBox.classList.remove("hidden");
+    }
+
+    function startGroup(type) {
+        const dateValue = entryDate.value;
+        if (!dateValue) {
+            showMessage("Please set the entry date first.", "error");
+            return;
+        }
+
+        if (type === "Walk-in") {
+            const count = Number(walkInCount.value || 0);
+            if (count <= 0) {
+                showMessage("Please enter a valid Walk-in count.", "error");
                 return;
             }
-
-            const now = new Date();
-            const month = String(now.getMonth() + 1).padStart(2, "0");
-            const day = String(now.getDate()).padStart(2, "0");
-            const hour = String(now.getHours()).padStart(2, "0");
-            const minute = String(now.getMinutes()).padStart(2, "0");
-            const second = String(now.getSeconds()).padStart(2, "0");
-            const backupKey = `${now.getFullYear()}-${month}-${day}_${hour}-${minute}-${second}`;
-
-            const backupData = await buildBackupData();
-            await set(ref(db, "backups/" + backupKey), backupData);
-
-            alert("Backup saved to system successfully.");
-        } catch (error) {
-            console.error("Save system backup error:", error);
-            alert("Saving backup to system failed.");
+            setActiveGroup({
+                donorType: "Walk-in",
+                originalCount: count,
+                remaining: count,
+                entryDate: dateValue,
+                createdAtMs: Date.now()
+            });
+            renderActiveGroup();
+            showMessage("Walk-in group started.", "success");
+            return;
         }
-    };
 
-    window.logout = async function() {
+        if (type === "MBD") {
+            const count = Number(mbdCount.value || 0);
+            const organization = mbdDetails.value.trim();
+            if (!organization) {
+                showMessage("Please enter the MBD site / organization.", "error");
+                return;
+            }
+            if (count <= 0) {
+                showMessage("Please enter a valid MBD count.", "error");
+                return;
+            }
+            setActiveGroup({
+                donorType: "MBD",
+                organization,
+                originalCount: count,
+                remaining: count,
+                entryDate: dateValue,
+                createdAtMs: Date.now()
+            });
+            renderActiveGroup();
+            showMessage("MBD group started.", "success");
+        }
+    }
+
+    function consumeGroupAfterSave() {
+        const activeGroup = getActiveGroup();
+        if (!activeGroup) return;
+
+        if (activeGroup.entryDate !== entryDate.value) return;
+        if (!activeGroup.remaining || activeGroup.remaining <= 0) return;
+
+        activeGroup.remaining -= 1;
+
+        if (activeGroup.remaining <= 0) {
+            clearActiveGroup();
+            renderActiveGroup();
+            showMessage("Group completed.", "success");
+            return;
+        }
+
+        setActiveGroup(activeGroup);
+        renderActiveGroup();
+    }
+
+    function getLocalSerialBatch() {
         try {
-            await signOut(auth);
-            alert("Logged out successfully.");
-            window.location.href = "index.html";
-        } catch (error) {
-            console.error("Logout error:", error);
-            alert("Logout failed.");
+            const raw = localStorage.getItem(SERIAL_BATCH_STORAGE_KEY);
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.list)) return null;
+            return parsed;
+        } catch {
+            return null;
         }
-    };
+    }
+
+    function setLocalSerialBatch(data) {
+        localStorage.setItem(SERIAL_BATCH_STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function clearLocalSerialBatch() {
+        localStorage.removeItem(SERIAL_BATCH_STORAGE_KEY);
+    }
+
+    function getSerialBatch() {
+        return getLocalSerialBatch();
+    }
+
+    function setSerialBatch(list) {
+        const batch = {
+            prefix: serialPrefix.textContent.trim(),
+            list: list.slice(),
+            originalCount: list.length,
+            rangeDonorType: getSelectedRangeDonorType(),
+            rangeMbdDetails: rangeMbdDetails.value.trim(),
+            rangePatientDetails: rangePatientDetails.value.trim(),
+            createdAtMs: Date.now()
+        };
+        setLocalSerialBatch(batch);
+        renderSerialBatchInfo();
+        loadNextSerialFromBatch(false);
+    }
+
+    function clearSerialBatch() {
+        clearLocalSerialBatch();
+        renderSerialBatchInfo();
+    }
+
+    function renderSerialBatchInfo() {
+        const batch = getSerialBatch();
+
+        if (!batch || !Array.isArray(batch.list) || !batch.list.length) {
+            serialBatchInfo.classList.add("hidden");
+            serialBatchPreview.classList.add("hidden");
+            serialBatchInfo.textContent = "";
+            serialBatchPreview.textContent = "";
+            return;
+        }
+
+        const prefixText = batch.prefix || serialPrefix.textContent.trim();
+        const next = batch.list[0];
+        const previewItems = batch.list.slice(0, 6).map(item => `${prefixText}${item}`);
+        const moreText = batch.list.length > 6 ? ` ... and ${batch.list.length - 6} more` : "";
+
+        let donorTypeText = batch.rangeDonorType ? ` | Type: ${batch.rangeDonorType}` : "";
+        if (batch.rangeDonorType === "MBD" && batch.rangeMbdDetails) donorTypeText += ` - ${batch.rangeMbdDetails}`;
+        if (batch.rangeDonorType === "Patient Directed" && batch.rangePatientDetails) donorTypeText += ` - ${batch.rangePatientDetails}`;
+
+        serialBatchInfo.textContent = `Active serial list: ${batch.list.length} remaining | Next serial: ${prefixText}${next}${donorTypeText}`;
+        serialBatchPreview.innerHTML = `<b>Preview:</b> ${escapeHtml(previewItems.join(", "))}${escapeHtml(moreText)}`;
+
+        serialBatchInfo.classList.remove("hidden");
+        serialBatchPreview.classList.remove("hidden");
+    }
+
+    function loadNextSerialFromBatch(showStatus = true) {
+        const batch = getSerialBatch();
+
+        if (!batch || !Array.isArray(batch.list) || !batch.list.length) {
+            if (showStatus) showMessage("No active serial list found.", "error");
+            renderSerialBatchInfo();
+            return;
+        }
+
+        serialNumberInput.value = batch.list[0];
+
+        if (batch.rangeDonorType) {
+            setSelectedDonorType(batch.rangeDonorType);
+            if (batch.rangeDonorType === "MBD" && batch.rangeMbdDetails) {
+                mbdDetails.value = batch.rangeMbdDetails;
+            }
+            if (batch.rangeDonorType === "Patient Directed" && batch.rangePatientDetails) {
+                patientDirectedDetails.value = batch.rangePatientDetails;
+            }
+        }
+
+        renderSerialBatchInfo();
+
+        if (showStatus) {
+            showMessage(`Next serial loaded: ${(batch.prefix || serialPrefix.textContent.trim())}${batch.list[0]}`, "success");
+        }
+    }
+
+    function consumeSerialBatchAfterSave() {
+        const batch = getSerialBatch();
+        if (!batch || !Array.isArray(batch.list) || !batch.list.length) return;
+
+        batch.list.shift();
+
+        if (!batch.list.length) {
+            clearLocalSerialBatch();
+            renderSerialBatchInfo();
+            showMessage("Serial list completed.", "success");
+            return;
+        }
+
+        setLocalSerialBatch(batch);
+        renderSerialBatchInfo();
+    }
+
+    function setSerialRangeCollapsed(isOpen) {
+        serialRangeCollapse.classList.toggle("hidden", !isOpen);
+        serialRangeToggleBtn.classList.toggle("open", isOpen);
+        serialRangeToggleBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    }
+
+    function formatSmartTimeWhileTyping(value) {
+        const raw = String(value || "");
+        if (!raw) return "";
+        const cleaned = raw.replace(/[^\d:]/g, "");
+
+        if (cleaned.includes(":")) {
+            const parts = cleaned.split(":");
+            const hours = (parts[0] || "").replace(/\D/g, "").slice(0, 2);
+            const minutes = (parts[1] || "").replace(/\D/g, "").slice(0, 2);
+            return minutes.length ? `${hours}:${minutes}` : `${hours}:`;
+        }
+
+        return cleaned.replace(/\D/g, "").slice(0, 4);
+    }
+
+    function normalizeSmartTimeValue(value) {
+        const raw = String(value || "").trim();
+        if (!raw) return "";
+
+        if (raw.includes(":")) {
+            const colonMatch = raw.match(/^(\d{1,2}):(\d{1,2})$/);
+            if (!colonMatch) return "";
+            const hours = Number(colonMatch[1]);
+            const minutes = Number(colonMatch[2]);
+            if (Number.isNaN(hours) || Number.isNaN(minutes)) return "";
+            if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return "";
+            return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+        }
+
+        const digits = raw.replace(/\D/g, "").slice(0, 4);
+        if (!digits) return "";
+
+        let hours = 0;
+        let minutes = 0;
+
+        if (digits.length === 1) {
+            hours = Number(digits);
+        } else if (digits.length === 2) {
+            hours = Number(digits);
+        } else if (digits.length === 3) {
+            hours = Number(digits.slice(0, 1));
+            minutes = Number(digits.slice(1));
+        } else {
+            hours = Number(digits.slice(0, 2));
+            minutes = Number(digits.slice(2, 4));
+        }
+
+        if (Number.isNaN(hours) || Number.isNaN(minutes)) return "";
+        if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return "";
+
+        return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+    }
+
+    function parseFlexibleTime(value) {
+        const normalized = normalizeSmartTimeValue(value);
+        if (!normalized) return null;
+
+        const match = normalized.match(/^(\d{2}):(\d{2})$/);
+        if (!match) return null;
+
+        const hours = Number(match[1]);
+        const minutes = Number(match[2]);
+
+        return {
+            normalized,
+            totalMinutes: (hours * 60) + minutes
+        };
+    }
+
+    function formatMinutesToHoursMinutes(totalMinutes) {
+        const hrs = Math.floor(totalMinutes / 60);
+        const mins = totalMinutes % 60;
+        if (hrs > 0 && mins > 0) return `${hrs} hr ${mins} min`;
+        if (hrs > 0) return `${hrs} hr`;
+        return `${mins} min`;
+    }
+
+    function validateAndDescribeTimes() {
+        const started = timeStartedInput.value.trim();
+        const ended = timeEndedInput.value.trim();
+
+        if (!started && !ended) {
+            timeHelperBox.classList.add("hidden");
+            timeHelperBox.textContent = "";
+            return { valid: true, normalizedStarted: "", normalizedEnded: "", durationMinutes: null, overnight: false };
+        }
+
+        if ((started && !ended) || (!started && ended)) {
+            timeHelperBox.textContent = "Please complete both Time Started and Time Ended.";
+            timeHelperBox.classList.remove("hidden");
+            return { valid: false };
+        }
+
+        const startParsed = parseFlexibleTime(started);
+        const endParsed = parseFlexibleTime(ended);
+
+        if (!startParsed || !endParsed) {
+            timeHelperBox.textContent = "Invalid time input. Please use 24-hour format like 07:30 or 19:30.";
+            timeHelperBox.classList.remove("hidden");
+            return { valid: false };
+        }
+
+        let duration = endParsed.totalMinutes - startParsed.totalMinutes;
+        let overnight = false;
+
+        if (duration < 0) {
+            duration += 24 * 60;
+            overnight = true;
+        }
+
+        if (duration === 0) {
+            timeHelperBox.textContent = "Time Started and Time Ended cannot be exactly the same.";
+            timeHelperBox.classList.remove("hidden");
+            return { valid: false };
+        }
+
+        timeStartedInput.value = startParsed.normalized;
+        timeEndedInput.value = endParsed.normalized;
+
+        timeHelperBox.textContent = overnight
+            ? `Accepted. Duration: ${formatMinutesToHoursMinutes(duration)} (crossed midnight).`
+            : `Accepted. Duration: ${formatMinutesToHoursMinutes(duration)}.`;
+        timeHelperBox.classList.remove("hidden");
+
+        return {
+            valid: true,
+            normalizedStarted: startParsed.normalized,
+            normalizedEnded: endParsed.normalized,
+            durationMinutes: duration,
+            overnight
+        };
+    }
+
+    function readAllDonors() {
+        return rtdb.ref("donorDatabase").once("value").then(snapshot => {
+            const raw = snapshot.val() || {};
+            return Object.keys(raw).map(key => ({
+                _id: key,
+                ...raw[key]
+            }));
+        });
+    }
+
+    function compareDatesDesc(a, b) {
+        const ad = String(a || "");
+        const bd = String(b || "");
+        return bd.localeCompare(ad);
+    }
+
+    function findLatestDonationForIdentity(baseRecord, records) {
+        const identityKey = getStrongIdentityKey(baseRecord);
+
+        return records
+            .filter(item => getStrongIdentityKey(item) === identityKey && item.entryDate)
+            .sort((a, b) => compareDatesDesc(a.entryDate, b.entryDate))[0] || null;
+    }
+
+    function fillFormFromDonor(record) {
+        document.getElementById("suffix").value = record.suffix || "";
+        document.getElementById("surname").value = record.surname || "";
+        document.getElementById("firstName").value = record.firstName || "";
+        document.getElementById("middleName").value = record.middleName || "";
+        document.getElementById("birthday").value = record.birthday || "";
+        document.getElementById("civilStatus").value = record.civilStatus || "";
+        document.getElementById("sex").value = record.sex || "";
+        document.getElementById("address").value = record.address || "";
+        document.getElementById("cityProvince").value = record.cityProvince || "";
+        document.getElementById("occupation").value = record.occupation || "";
+        document.getElementById("contactNumber").value = record.contactNumber || "";
+        document.getElementById("bloodType").value = record.bloodType || "";
+        computeAge();
+
+        loadedDonorRecord = record;
+        loadedDonorInfo.textContent = `Loaded donor: ${record.surname || ""}, ${record.firstName || ""} ${record.middleName || ""} | Birthday: ${record.birthday || ""} | Last entry: ${record.entryDate || "N/A"}`;
+        loadedDonorInfo.classList.remove("hidden");
+
+        if (record.numberOfDonations !== undefined && record.numberOfDonations !== null && record.numberOfDonations !== "") {
+            numberOfDonations.value = record.numberOfDonations;
+        }
+
+        updateAutoTypeSuggestion();
+    }
+
+    function clearLoadedDonor() {
+        loadedDonorRecord = null;
+        loadedDonorInfo.textContent = "";
+        loadedDonorInfo.classList.add("hidden");
+        autoTypeSuggestion = "New";
+        autoTypeReason = "No loaded donor history, so Auto defaults to New.";
+        refreshTypeHelper();
+    }
+
+    function renderLookupResults(records) {
+        donorLookupResults = records.slice();
+        lookupResultsBody.innerHTML = "";
+
+        if (!records.length) {
+            lookupResultsBox.classList.add("hidden");
+            return;
+        }
+
+        records.forEach(record => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td><button type="button" class="small-btn blue-btn" data-id="${escapeHtml(record._id)}">Load</button></td>
+                <td>${escapeHtml(record.surname || "")}</td>
+                <td>${escapeHtml(record.firstName || "")}</td>
+                <td>${escapeHtml(record.middleName || "")}</td>
+                <td>${escapeHtml(record.birthday || "")}</td>
+                <td>${escapeHtml(record.bloodType || "")}</td>
+                <td>${escapeHtml(record.entryDate || "")}</td>
+                <td>${escapeHtml(record.donorCategory || "")}</td>
+                <td>${escapeHtml(record.numberOfDonations || 0)}</td>
+            `;
+            lookupResultsBody.appendChild(tr);
+        });
+
+        lookupResultsBox.classList.remove("hidden");
+
+        lookupResultsBody.querySelectorAll("button[data-id]").forEach(btn => {
+            btn.addEventListener("click", function () {
+                const id = this.getAttribute("data-id");
+                const match = donorLookupResults.find(item => item._id === id);
+                if (match) fillFormFromDonor(match);
+            });
+        });
+    }
+
+    function performLookup() {
+        const query = normalizeText(lookupSearch.value);
+
+        if (!query) {
+            renderLookupResults([]);
+            return;
+        }
+
+        const filtered = allDonorRecords
+            .filter(record => {
+                const haystack = [
+                    record.surname,
+                    record.firstName,
+                    record.middleName,
+                    record.birthday,
+                    record.bloodType,
+                    record.contactNumber
+                ].map(normalizeText).join(" ");
+
+                return haystack.includes(query);
+            })
+            .sort((a, b) => compareDatesDesc(a.entryDate, b.entryDate))
+            .slice(0, 50);
+
+        renderLookupResults(filtered);
+
+        if (filtered.length === 1) {
+            fillFormFromDonor(filtered[0]);
+        }
+    }
+
+    function buildSavePayload(timeInfo) {
+        const selectedDonorType = getSelectedDonorType();
+        const finalSerialNumber = getFinalSerialNumber();
+
+        if (!selectedDonorType) {
+            throw new Error("Please select donor type.");
+        }
+
+        if (!finalSerialNumber) {
+            throw new Error("Please enter a serial number.");
+        }
+
+        return {
+            entryDate: entryDate.value,
+            serialNumber: finalSerialNumber,
+            serialPrefixUsed: useSerialPrefix.checked,
+            serialPrefixValue: serialPrefix.textContent.trim(),
+
+            donorType: selectedDonorType,
+            patientDirectedDetails: patientDirectedDetails.value.trim(),
+            walkInCount: Number(walkInCount.value || 0),
+            mbdDetails: mbdDetails.value.trim(),
+            mbdCount: Number(mbdCount.value || 0),
+
+            suffix: document.getElementById("suffix").value.trim(),
+            surname: document.getElementById("surname").value.trim(),
+            firstName: document.getElementById("firstName").value.trim(),
+            middleName: document.getElementById("middleName").value.trim(),
+            birthday: document.getElementById("birthday").value,
+            age: Number(document.getElementById("age").value || 0),
+            civilStatus: document.getElementById("civilStatus").value,
+            sex: document.getElementById("sex").value,
+            address: document.getElementById("address").value.trim(),
+            cityProvince: document.getElementById("cityProvince").value.trim(),
+            occupation: document.getElementById("occupation").value.trim(),
+            contactNumber: document.getElementById("contactNumber").value.trim(),
+
+            donorCategory: getFinalDonorCategoryToSave(),
+            donorCategoryMode: donorCategory.value,
+            donorCategoryReason: autoTypeReason || "",
+            numberOfDonations: Number(numberOfDonations.value || 0),
+
+            bloodType: document.getElementById("bloodType").value,
+            bloodBagBrand: document.getElementById("bloodBagBrand").value,
+            bloodBagType: document.getElementById("bloodBagType").value,
+            amount: document.getElementById("amount").value,
+
+            timeStarted: timeInfo.normalizedStarted,
+            timeEnded: timeInfo.normalizedEnded,
+            timeDurationMinutes: timeInfo.durationMinutes,
+            timeOvernight: timeInfo.overnight,
+
+            remarks: document.getElementById("remarks").value.trim(),
+
+            loadedFromExistingDonorId: loadedDonorRecord ? loadedDonorRecord._id : "",
+            createdByUid: currentUser ? currentUser.uid : "",
+            createdByEmail: currentUser ? currentUser.email || "" : "",
+            createdAt: new Date().toISOString()
+        };
+    }
+
+    async function refreshAllDonors() {
+        allDonorRecords = await readAllDonors();
+        if (lookupSearch.value.trim()) performLookup();
+    }
+
+    async function saveDonorEntry() {
+        clearMessage();
+
+        if (!currentUser) {
+            showMessage("You are not logged in.", "error");
+            return;
+        }
+
+        if (!entryDate.value) {
+            showMessage("Please enter the date.", "error");
+            return;
+        }
+
+        const timeInfo = validateAndDescribeTimes();
+        if (!timeInfo.valid) return;
+
+        let payload;
+        try {
+            payload = buildSavePayload(timeInfo);
+        } catch (error) {
+            showMessage(error.message, "error");
+            return;
+        }
+
+        if (!payload.surname || !payload.firstName || !payload.birthday || !payload.sex || !payload.bloodType) {
+            showMessage("Please complete the required donor details.", "error");
+            return;
+        }
+
+        setSavingState(true);
+
+        try {
+            await rtdb.ref("donorDatabase").push(payload);
+
+            consumeGroupAfterSave();
+            consumeSerialBatchAfterSave();
+            await refreshAllDonors();
+
+            const batch = getSerialBatch();
+            if (batch && batch.list && batch.list.length) {
+                loadNextSerialFromBatch(false);
+            } else {
+                serialNumberInput.value = "";
+            }
+
+            document.getElementById("remarks").value = "";
+            document.getElementById("timeStarted").value = "";
+            document.getElementById("timeEnded").value = "";
+            timeHelperBox.classList.add("hidden");
+            timeHelperBox.textContent = "";
+
+            showMessage("Donor entry saved successfully.", "success");
+        } catch (error) {
+            console.error("Save donor entry error:", error);
+            showMessage("Save failed: " + error.message, "error");
+        } finally {
+            setSavingState(false);
+        }
+    }
+
+    function clearFormButKeepEntryDate() {
+        const currentEntryDate = entryDate.value;
+        donorForm.reset();
+        entryDate.value = currentEntryDate || new Date().toISOString().split("T")[0];
+        donorCategory.value = "Auto";
+        numberOfDonations.value = "0";
+        useSerialPrefix.checked = true;
+        updateSerialPrefixByDate();
+        updateDonorTypeFields();
+        updateRangeDonorTypeFields();
+        clearLoadedDonor();
+        renderActiveGroup();
+        renderSerialBatchInfo();
+        clearMessage();
+        computeAge();
+        timeHelperBox.classList.add("hidden");
+        timeHelperBox.textContent = "";
+    }
+
+    donorTypeRadios.forEach(radio => {
+        radio.addEventListener("change", updateDonorTypeFields);
+    });
+
+    rangeDonorTypeRadios.forEach(radio => {
+        radio.addEventListener("change", updateRangeDonorTypeFields);
+    });
+
+    donorCategory.addEventListener("change", refreshTypeHelper);
+    entryDate.addEventListener("change", function () {
+        updateSerialPrefixByDate();
+        renderActiveGroup();
+        updateAutoTypeSuggestion();
+    });
+    birthday.addEventListener("change", computeAge);
+
+    useSerialPrefix.addEventListener("change", updateSerialModeUI);
+
+    serialRangeToggleBtn.addEventListener("click", function() {
+        setSerialRangeCollapsed(serialRangeCollapse.classList.contains("hidden"));
+    });
+
+    reloadPageBtn.addEventListener("click", function() {
+        window.location.reload();
+    });
+
+    lookupSearch.addEventListener("input", function() {
+        clearTimeout(donorSearchDebounce);
+        donorSearchDebounce = setTimeout(performLookup, 180);
+    });
+
+    clearLoadedDonorBtn.addEventListener("click", clearLoadedDonor);
+    endGroupBtn.addEventListener("click", function() {
+        clearActiveGroup();
+        renderActiveGroup();
+        showMessage("Active group ended.", "success");
+    });
+
+    startWalkInGroupBtn.addEventListener("click", function() {
+        startGroup("Walk-in");
+    });
+
+    startMbdGroupBtn.addEventListener("click", function() {
+        startGroup("MBD");
+    });
+
+    generateSerialRangeBtn.addEventListener("click", function() {
+        try {
+            const list = buildSerialListFromRange(
+                serialRangeStart.value,
+                serialRangeEnd.value,
+                serialRangeSkip.value
+            );
+            setSerialBatch(list);
+            showMessage(`Serial range generated successfully. ${list.length} serial(s) loaded.`, "success");
+        } catch (error) {
+            showMessage(error.message, "error");
+        }
+    });
+
+    nextSerialBtn.addEventListener("click", function() {
+        loadNextSerialFromBatch(true);
+    });
+
+    clearSerialBatchBtn.addEventListener("click", function() {
+        clearSerialBatch();
+        showMessage("Serial list cleared.", "success");
+    });
+
+    rangeMbdDetails.addEventListener("input", updateRangeDonorTypeFields);
+    rangePatientDetails.addEventListener("input", updateRangeDonorTypeFields);
+
+    [timeStartedInput, timeEndedInput].forEach(input => {
+        input.addEventListener("input", function () {
+            const cursorEnd = this.selectionStart;
+            this.value = formatSmartTimeWhileTyping(this.value);
+            try {
+                this.setSelectionRange(cursorEnd, cursorEnd);
+            } catch (error) {}
+        });
+
+        input.addEventListener("blur", function () {
+            const normalized = normalizeSmartTimeValue(this.value);
+            if (this.value.trim() && !normalized) {
+                timeHelperBox.textContent = "Invalid time input. Please use 24-hour format like 07:30 or 19:30.";
+                timeHelperBox.classList.remove("hidden");
+                return;
+            }
+            if (normalized) this.value = normalized;
+            validateAndDescribeTimes();
+        });
+    });
+
+    donorForm.addEventListener("submit", function(event) {
+        event.preventDefault();
+        saveDonorEntry();
+    });
+
+    resetFormBtn.addEventListener("click", function() {
+        setTimeout(() => {
+            clearFormButKeepEntryDate();
+        }, 0);
+    });
+
+    auth.onAuthStateChanged(async function(user) {
+        if (!user) {
+            setAuthIndicator("Not logged in", false);
+            saveDonorBtn.disabled = true;
+            return;
+        }
+
+        currentUser = user;
+        setAuthIndicator(`Logged in as ${user.email || "User"}`, true);
+        saveDonorBtn.disabled = false;
+
+        try {
+            await refreshAllDonors();
+            setTodayDate();
+            updateDonorTypeFields();
+            updateRangeDonorTypeFields();
+            renderActiveGroup();
+            renderSerialBatchInfo();
+            autoTypeSuggestion = "New";
+            autoTypeReason = "No loaded donor history, so Auto defaults to New.";
+            refreshTypeHelper();
+        } catch (error) {
+            console.error("Initial donor data load failed:", error);
+            showMessage("Initial donor data load failed: " + error.message, "error");
+        }
+    });
 </script>
 
 </body>
